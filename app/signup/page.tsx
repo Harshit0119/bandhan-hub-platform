@@ -69,12 +69,7 @@ function SignupForm() {
       await signup(email, password, name, activeTab === 'vendor')
 
       toast.success('Account created successfully!')
-
-      // 🔥 wait for session to be ready
-       window.location.href = activeTab === 'vendor'
-      ? '/dashboard'
-      : '/vendors'
-
+      router.push('/login')
     } catch (err: any) {
       console.error(err)
       toast.error(err.message || 'Signup failed')

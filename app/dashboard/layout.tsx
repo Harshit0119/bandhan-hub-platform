@@ -93,10 +93,14 @@ export default function DashboardLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
-    if (!isLoading && (!user || !user.isVendor)) {
-      router.push('/login')
-    } 
-  }, [user, isLoading, router])
+    if (!isLoading) {
+      if (!user) {
+        router.push('/login')
+      } else if (!user.isVendor) {
+        router.push('/vendors')
+      }
+    }
+  }, [user, isLoading])
 
   if (isLoading) {
     return (
