@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import React from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
 import {
@@ -21,53 +22,59 @@ interface NavbarProps {
 export function Navbar({ transparent = false }: NavbarProps) {
   const { user, logout } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 0)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-300 ${
-      transparent ? 'bg-transparent' : 'bg-background/95 backdrop-blur-md border-b border-border'
-    }`}>
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-300 ${isScrolled
+        ? "bg-[#8B0000]/95 backdrop-blur-md shadow-lg"
+        : isScrolled ? "bg-transparent" 
+        : "bg-transparent"
+      }`}>
       <nav className="container mx-auto px-4 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <span className={`font-serif text-2xl lg:text-3xl font-bold ${
-              transparent ? 'text-white' : 'text-primary'
-            }`}>
+            <span className={`font-serif text-2xl lg:text-3xl font-bold ${transparent ? 'text-white' : 'text-primary'
+              }`}>
               Bandhan<span className="text-accent">Hub</span>
             </span>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-8">
-            <Link 
-              href="/vendors" 
-              className={`text-sm font-medium transition-colors hover:text-accent ${
-                transparent ? 'text-white/90' : 'text-foreground/80'
-              }`}
+            <Link
+              href="/vendors"
+              className={`text-sm font-medium transition-colors hover:text-accent ${transparent ? 'text-white/90' : 'text-foreground/80'
+                }`}
             >
               All Vendors
             </Link>
-            <Link 
-              href="/vendors?category=Photographer" 
-              className={`text-sm font-medium transition-colors hover:text-accent ${
-                transparent ? 'text-white/90' : 'text-foreground/80'
-              }`}
+            <Link
+              href="/vendors?category=Photographer"
+              className={`text-sm font-medium transition-colors hover:text-accent ${transparent ? 'text-white/90' : 'text-foreground/80'
+                }`}
             >
               Photographers
             </Link>
-            <Link 
-              href="/vendors?category=Wedding Planner" 
-              className={`text-sm font-medium transition-colors hover:text-accent ${
-                transparent ? 'text-white/90' : 'text-foreground/80'
-              }`}
+            <Link
+              href="/vendors?category=Wedding Planner"
+              className={`text-sm font-medium transition-colors hover:text-accent ${transparent ? 'text-white/90' : 'text-foreground/80'
+                }`}
             >
               Planners
             </Link>
-            <Link 
-              href="/vendors?category=Makeup Artist" 
-              className={`text-sm font-medium transition-colors hover:text-accent ${
-                transparent ? 'text-white/90' : 'text-foreground/80'
-              }`}
+            <Link
+              href="/vendors?category=Makeup Artist"
+              className={`text-sm font-medium transition-colors hover:text-accent ${transparent ? 'text-white/90' : 'text-foreground/80'
+                }`}
             >
               Makeup
             </Link>
@@ -161,7 +168,7 @@ export function Navbar({ transparent = false }: NavbarProps) {
               <Link href="/vendors?category=Makeup Artist" className="text-foreground/80 py-2" onClick={() => setMobileMenuOpen(false)}>
                 Makeup Artists
               </Link>
-              
+
               <div className="border-t border-border pt-4 flex flex-col gap-2">
                 {user ? (
                   <>
