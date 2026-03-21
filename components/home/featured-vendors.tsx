@@ -8,6 +8,7 @@ import { motion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 
 export function FeaturedVendors() {
+  // TODO: Fetch from Supabase - Only shows paid/premium vendors on homepage
   const vendors = getFeaturedVendors()
 
   return (

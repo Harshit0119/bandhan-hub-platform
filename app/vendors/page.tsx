@@ -25,6 +25,7 @@ function VendorsContent() {
   useEffect(() => {
     setIsLoading(true)
     // TODO: Replace with Supabase query
+    // Shows ALL vendors (both free and paid) - homepage only shows paid vendors
     const timer = setTimeout(() => {
       if (category || city || minBudget || maxBudget) {
         setVendors(filterVendors(category, city, minBudget, maxBudget))
