@@ -33,17 +33,17 @@ function SignupForm() {
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
-    
+
     if (!name.trim()) {
       newErrors.name = 'Name is required'
     }
-    
+
     if (!email) {
       newErrors.email = 'Email is required'
     } else if (!/\S+@\S+\.\S+/.test(email)) {
       newErrors.email = 'Please enter a valid email'
     }
-    
+
     if (!password) {
       newErrors.password = 'Password is required'
     } else if (password.length < 6) {
@@ -60,28 +60,35 @@ function SignupForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) return
 
     setIsLoading(true)
+
     try {
-      // TODO: connect Supabase auth
       await signup(email, password, name, activeTab === 'vendor')
+
       toast.success('Account created successfully!')
-      router.push('/dashboard')
-    } catch {
-      toast.error('Something went wrong. Please try again.')
+
+      // 🔥 wait for session to be ready
+       window.location.href = activeTab === 'vendor'
+      ? '/dashboard'
+      : '/vendors'
+
+    } catch (err: any) {
+      console.error(err)
+      toast.error(err.message || 'Signup failed')
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-secondary via-background to-secondary/50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-secondary via-background to-secondary/50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Back to Home */}
-        <Link 
-          href="/" 
+        <Link
+          href="/"
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -100,7 +107,7 @@ function SignupForm() {
               Join BandhanHub to find or offer wedding services
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent>
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'couple' | 'vendor')}>
               <TabsList className="grid w-full grid-cols-2 mb-6">
@@ -200,8 +207,8 @@ function SignupForm() {
                 </Field>
               </FieldGroup>
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 disabled={isLoading}
               >
@@ -234,7 +241,7 @@ function SignupForm() {
 export default function SignupPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-secondary via-background to-secondary/50 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-secondary via-background to-secondary/50 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     }>

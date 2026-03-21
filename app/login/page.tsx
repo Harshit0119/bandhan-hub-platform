@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
@@ -13,7 +13,7 @@ import { toast } from 'sonner'
 
 export default function LoginPage() {
   const router = useRouter()
-  const { login } = useAuth()
+  const { login, user } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -22,13 +22,13 @@ export default function LoginPage() {
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {}
-    
+
     if (!email) {
       newErrors.email = 'Email is required'
     } else if (!/\S+@\S+\.\S+/.test(email)) {
       newErrors.email = 'Please enter a valid email'
     }
-    
+
     if (!password) {
       newErrors.password = 'Password is required'
     } else if (password.length < 6) {
@@ -41,7 +41,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) return
 
     setIsLoading(true)
@@ -49,20 +49,28 @@ export default function LoginPage() {
       // TODO: connect Supabase auth
       await login(email, password)
       toast.success('Welcome back!')
-      router.push('/dashboard')
+      useEffect(() => {
+        if (user) {
+          if (user.isVendor) {
+            router.push('/dashboard')
+          } else {
+            router.push('/vendors')
+          }
+        } 
+      }, [user])
     } catch {
       toast.error('Invalid credentials. Please try again.')
     } finally {
       setIsLoading(false)
     }
   }
-
+  
   return (
-    <div className="min-h-screen bg-gradient-to-br from-secondary via-background to-secondary/50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-secondary via-background to-secondary/50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Back to Home */}
-        <Link 
-          href="/" 
+        <Link
+          href="/"
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -81,7 +89,7 @@ export default function LoginPage() {
               Sign in to continue to your account
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <FieldGroup>
@@ -131,8 +139,8 @@ export default function LoginPage() {
                 </Link>
               </div>
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 disabled={isLoading}
               >

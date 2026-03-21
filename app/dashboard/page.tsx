@@ -72,7 +72,7 @@ export default function DashboardPage() {
 
         {/* Subscription Status */}
         {vendorData && (
-          <Card className="mb-8 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
+          <Card className="mb-8 bg-linear-to-r from-primary to-primary/80 text-primary-foreground">
             <CardContent className="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 mb-2">
@@ -160,7 +160,7 @@ export default function DashboardPage() {
                   View Analytics
                 </Button>
               </Link>
-              <Link href={`/vendor/${user?.vendorId || '1'}`}>
+              <Link href={`/vendor/${user?.vendorId}`}>
                 <Button variant="outline" className="w-full justify-start">
                   Preview Public Profile
                 </Button>
@@ -219,7 +219,7 @@ export default function DashboardPage() {
               <CardContent>
                 <ul className="space-y-3">
                   <li className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium flex-shrink-0">
+                    <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium shrink-0">
                       1
                     </div>
                     <p className="text-sm text-muted-foreground">
@@ -227,7 +227,7 @@ export default function DashboardPage() {
                     </p>
                   </li>
                   <li className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium flex-shrink-0">
+                    <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium shrink-0">
                       2
                     </div>
                     <p className="text-sm text-muted-foreground">
@@ -235,7 +235,7 @@ export default function DashboardPage() {
                     </p>
                   </li>
                   <li className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium flex-shrink-0">
+                    <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium shrink-0">
                       3
                     </div>
                     <p className="text-sm text-muted-foreground">
@@ -243,7 +243,7 @@ export default function DashboardPage() {
                     </p>
                   </li>
                   <li className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium flex-shrink-0">
+                    <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium shrink-0">
                       4
                     </div>
                     <p className="text-sm text-muted-foreground">

@@ -93,7 +93,7 @@ function VendorProfileContent({ vendor }: VendorProfileContentProps) {
             fill
             className="object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-transparent" />
           
           {/* Back Button */}
           <div className="absolute top-4 left-4">
@@ -118,7 +118,7 @@ function VendorProfileContent({ vendor }: VendorProfileContentProps) {
             <div className="p-6 md:p-8">
               <div className="flex flex-col md:flex-row gap-6">
                 {/* Profile Image */}
-                <div className="flex-shrink-0 -mt-20 md:-mt-16">
+                <div className="shrink-0 -mt-20 md:-mt-16">
                   <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-2xl overflow-hidden border-4 border-card shadow-lg">
                     <Image
                       src={vendor.profileImage}
@@ -287,7 +287,7 @@ function VendorProfileContent({ vendor }: VendorProfileContentProps) {
                           <h4 className="font-semibold text-foreground">{service.name}</h4>
                           <p className="text-sm text-muted-foreground mt-1">{service.description}</p>
                         </div>
-                        <div className="text-right flex-shrink-0">
+                        <div className="text-right shrink-0">
                           <div className="font-bold text-primary">{formatPrice(service.price)}</div>
                           <span className="text-xs text-muted-foreground capitalize">{service.priceType}</span>
                         </div>

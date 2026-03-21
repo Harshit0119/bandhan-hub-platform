@@ -7,11 +7,11 @@ import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
 import { FavoritesProvider } from '@/lib/favorites-store'
-import { 
-  LayoutDashboard, 
-  User, 
-  Package, 
-  BarChart3, 
+import {
+  LayoutDashboard,
+  User,
+  Package,
+  BarChart3,
   CreditCard,
   LogOut,
   Menu,
@@ -55,8 +55,8 @@ function DashboardSidebar({ className }: { className?: string }) {
               <div
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
-                  isActive 
-                    ? "bg-primary text-primary-foreground" 
+                  isActive
+                    ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                 )}
               >
@@ -70,8 +70,8 @@ function DashboardSidebar({ className }: { className?: string }) {
 
       {/* Logout */}
       <div className="p-4 border-t border-border">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive"
           onClick={logout}
         >
@@ -93,9 +93,9 @@ export default function DashboardLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!isLoading && (!user || !user.isVendor)) {
       router.push('/login')
-    }
+    } 
   }, [user, isLoading, router])
 
   if (isLoading) {
@@ -107,7 +107,8 @@ export default function DashboardLayout({
   }
 
   if (!user) {
-    return null
+    router.push('/signup')
+    return
   }
 
   return (
@@ -125,7 +126,7 @@ export default function DashboardLayout({
               Bandhan<span className="text-accent">Hub</span>
             </span>
           </Link>
-          
+
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
