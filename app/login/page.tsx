@@ -45,26 +45,24 @@ export default function LoginPage() {
     if (!validateForm()) return
 
     setIsLoading(true)
+
     try {
-      // TODO: connect Supabase auth
-      await login(email, password)
+      const profile = await login(email, password)
+
       toast.success('Welcome back!')
-      useEffect(() => {
-        if (user) {
-          if (user.isVendor) {
-            router.push('/dashboard')
-          } else {
-            router.push('/vendors')
-          }
-        } 
-      }, [user])
+
+      if (profile.isVendor) {
+        router.push('/dashboard')
+      } else {
+        router.push('/vendors')
+      }
     } catch {
-      toast.error('Invalid credentials. Please try again.')
+      toast.error('Invalid credentials')
     } finally {
       setIsLoading(false)
     }
   }
-  
+
   return (
     <div className="min-h-screen bg-linear-to-br from-secondary via-background to-secondary/50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">

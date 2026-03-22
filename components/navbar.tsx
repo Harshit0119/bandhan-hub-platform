@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import React from 'react'
 import { useAuth } from '@/lib/auth-context'
@@ -21,6 +22,7 @@ interface NavbarProps {
 
 export function Navbar({ transparent = false }: NavbarProps) {
   const { user, logout } = useAuth()
+  const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
 
@@ -32,10 +34,15 @@ export function Navbar({ transparent = false }: NavbarProps) {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  const handleLogout = async () => {
+    await logout()
+    router.push('/login')
+  }
+
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-300 ${isScrolled
-        ? "bg-[#8B0000]/95 backdrop-blur-md shadow-lg"
-        : isScrolled ? "bg-transparent" 
+      ? "bg-[#8B0000]/95 backdrop-blur-md shadow-lg"
+      : isScrolled ? "bg-transparent"
         : "bg-transparent"
       }`}>
       <nav className="container mx-auto px-4 lg:px-8">
@@ -96,12 +103,12 @@ export function Navbar({ transparent = false }: NavbarProps) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem asChild>
+                    {/* <DropdownMenuItem asChild>
                       <Link href="/dashboard" className="flex items-center gap-2 cursor-pointer">
                         <LayoutDashboard className="h-4 w-4" />
                         Dashboard
                       </Link>
-                    </DropdownMenuItem>
+                    </DropdownMenuItem> */}
                     <DropdownMenuItem asChild>
                       <Link href="/favorites" className="flex items-center gap-2 cursor-pointer">
                         <Heart className="h-4 w-4" />
@@ -109,7 +116,7 @@ export function Navbar({ transparent = false }: NavbarProps) {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={logout} className="flex items-center gap-2 cursor-pointer text-destructive">
+                    <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 cursor-pointer text-destructive">
                       <LogOut className="h-4 w-4" />
                       Logout
                     </DropdownMenuItem>

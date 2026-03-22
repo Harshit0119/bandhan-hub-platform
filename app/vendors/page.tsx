@@ -44,7 +44,7 @@ function VendorsContent() {
         
         <main className="flex-1 pt-24">
           {/* Header */}
-          <section className="bg-gradient-to-br from-primary to-primary/80 text-white py-12">
+          <section className="bg-linear-to-br from-primary to-primary/80 text-white py-12">
             <div className="container mx-auto px-4">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}

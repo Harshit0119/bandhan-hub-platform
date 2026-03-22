@@ -102,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!profile) throw new Error('Profile not found')
 
     setUser(profile)
+    return profile
   }
 
   // 🔹 Signup (FIXED PROPERLY)
