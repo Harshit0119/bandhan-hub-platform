@@ -49,7 +49,7 @@ export function Navbar({ transparent = false }: NavbarProps) {
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <span className={`font-serif text-2xl lg:text-3xl font-bold ${transparent ? 'text-white' : 'text-primary'
+            <span className={`font-serif text-2xl lg:text-3xl font-bold not-last  not-last:text-primary ${transparent ? 'text-white' : 'text-foreground'
               }`}>
               Bandhan<span className="text-accent">Hub</span>
             </span>

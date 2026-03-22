@@ -14,7 +14,7 @@ const benefits = [
 
 export function CTASection() {
   return (
-    <section className="py-20 bg-gradient-to-br from-primary to-primary/80 relative overflow-hidden">
+    <section className="py-20 bg-linear-to-br from-primary to-primary/80 relative overflow-hidden">
       {/* Decorative elements */}
       <div className="absolute top-0 left-0 w-64 h-64 bg-accent/10 rounded-full -translate-x-1/2 -translate-y-1/2" />
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-accent/10 rounded-full translate-x-1/2 translate-y-1/2" />
@@ -43,11 +43,11 @@ export function CTASection() {
                   transition={{ delay: index * 0.1 }}
                   className="flex items-center gap-3 text-white"
                 >
-                  <CheckCircle className="h-5 w-5 text-accent flex-shrink-0" />
+                  <CheckCircle className="h-5 w-5 text-accent shrink-0" />
                   <span>{benefit}</span>
                 </motion.li>
               ))}
-            </ul>
+            </ul> 
 
             <Link href="/signup?vendor=true">
               <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 group">

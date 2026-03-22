@@ -41,7 +41,6 @@ function VendorsContent() {
     <FavoritesProvider>
       <div className="min-h-screen flex flex-col bg-background">
         <Navbar />
-        
         <main className="flex-1 pt-24">
           {/* Header */}
           <section className="bg-linear-to-br from-primary to-primary/80 text-white py-12">
