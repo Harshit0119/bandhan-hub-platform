@@ -11,15 +11,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/lib/auth-context'
 import { useFavorites, FavoritesProvider } from '@/lib/favorites-store'
-import { getVendorById } from '@/lib/mock-data'
+import { supabase } from '@/lib/supabase'
 import { Vendor } from '@/lib/types'
-import { 
-  Heart, 
-  MapPin, 
-  Phone, 
-  Instagram, 
-  MessageCircle, 
-  Star, 
+import {
+  Heart,
+  MapPin,
+  Phone,
+  Instagram,
+  MessageCircle,
+  Star,
   Eye,
   ArrowLeft,
   Loader2,
@@ -27,6 +27,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
+import { set } from 'date-fns'
 
 interface VendorProfileContentProps {
   vendor: Vendor
@@ -46,7 +47,7 @@ function VendorProfileContent({ vendor }: VendorProfileContentProps) {
 
   const handleFavoriteClick = () => {
     if (!user) {
-      router.push('/signup')
+      router.push('/login')
       return
     }
     if (isFavorite(vendor.id)) {
@@ -83,7 +84,7 @@ function VendorProfileContent({ vendor }: VendorProfileContentProps) {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
-      
+
       <main className="flex-1 pt-16">
         {/* Cover Image */}
         <div className="relative h-64 md:h-80 lg:h-96">
@@ -94,11 +95,11 @@ function VendorProfileContent({ vendor }: VendorProfileContentProps) {
             className="object-cover"
           />
           <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-transparent" />
-          
+
           {/* Back Button */}
           <div className="absolute top-4 left-4">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="icon"
               className="bg-white/20 backdrop-blur-sm text-white hover:bg-white/30"
               onClick={() => router.back()}
@@ -196,7 +197,7 @@ function VendorProfileContent({ vendor }: VendorProfileContentProps) {
               {/* Contact Buttons */}
               <div className="flex flex-wrap gap-3 mt-8 pt-6 border-t border-border">
                 {vendor.whatsapp && (
-                  <Button 
+                  <Button
                     onClick={() => handleContactClick('whatsapp')}
                     className="bg-[#25D366] hover:bg-[#20BD5C] text-white"
                   >
@@ -205,7 +206,7 @@ function VendorProfileContent({ vendor }: VendorProfileContentProps) {
                   </Button>
                 )}
                 {vendor.instagram && (
-                  <Button 
+                  <Button
                     variant="outline"
                     onClick={() => handleContactClick('instagram')}
                     className="border-[#E4405F] text-[#E4405F] hover:bg-[#E4405F]/10"
@@ -215,7 +216,7 @@ function VendorProfileContent({ vendor }: VendorProfileContentProps) {
                   </Button>
                 )}
                 {vendor.phone && (
-                  <Button 
+                  <Button
                     variant="outline"
                     onClick={() => handleContactClick('phone')}
                   >
@@ -305,7 +306,7 @@ function VendorProfileContent({ vendor }: VendorProfileContentProps) {
                     Get in touch with {vendor.name} today
                   </p>
                   {vendor.whatsapp && (
-                    <Button 
+                    <Button
                       onClick={() => handleContactClick('whatsapp')}
                       className="w-full bg-white text-primary hover:bg-white/90"
                     >
@@ -332,21 +333,49 @@ export default function VendorProfilePage({ params }: { params: Promise<{ id: st
   const [vendor, setVendor] = useState<Vendor | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+
   useEffect(() => {
     if (authLoading) return
-    
     // If not logged in, redirect to signup
     if (!user) {
-      router.push('/signup')
+      router.push('/login')
       return
     }
+    const fetchVendor = async () => {
+      setIsLoading(true)
 
-    // TODO: Fetch vendor from Supabase
-    const foundVendor = getVendorById(resolvedParams.id)
-    if (foundVendor) {
-      setVendor(foundVendor)
+      const { data, error } = await supabase
+        .from('vendors')
+        .select('*')
+        .eq('id', resolvedParams.id)
+        .single()
+
+      if (error) {
+        console.error("Error fetching vendor:", error)
+        setIsLoading(false)
+        return
+      }
+      setVendor({
+        ...data,
+        coverImage: data.cover_image || '/placeholder.jpg',
+        profileImage: data.profile_image || '/placeholder.jpg',
+        gallery: [],
+        services: [],
+        views: 0,
+        favoritesCount: 0,
+        minPrice: Number(data.min_price) || 0,
+        maxPrice: Number(data.max_price) || 0,
+        isPremium: data.is_premium,
+        whatsapp: data.whatsapp,
+        instagram: data.instagram,
+        phone: data.phone,
+        experience: data.experience,
+        about: data.about,
+
+      })
+      setIsLoading(false)
     }
-    setIsLoading(false)
+    fetchVendor()
   }, [resolvedParams.id, user, authLoading, router])
 
   if (authLoading || isLoading) {
@@ -374,3 +403,7 @@ export default function VendorProfilePage({ params }: { params: Promise<{ id: st
     </FavoritesProvider>
   )
 }
+// function setVendor(arg0: any) {
+//   throw new Error('Function not implemented.')
+// }
+

@@ -103,12 +103,12 @@ export function Navbar({ transparent = false }: NavbarProps) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
-                    {/* <DropdownMenuItem asChild>
+                    <DropdownMenuItem asChild>
                       <Link href="/dashboard" className="flex items-center gap-2 cursor-pointer">
                         <LayoutDashboard className="h-4 w-4" />
                         Dashboard
                       </Link>
-                    </DropdownMenuItem> */}
+                    </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href="/favorites" className="flex items-center gap-2 cursor-pointer">
                         <Heart className="h-4 w-4" />

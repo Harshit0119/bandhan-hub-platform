@@ -62,16 +62,16 @@ export function VendorCard({ vendor, index = 0 }: VendorCardProps) {
         className="group overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 border-border bg-card"
         onClick={handleClick}
       >
-        <div className="relative aspect-[4/3] overflow-hidden">
+        <div className="relative aspect-4/3 overflow-hidden">
           <Image
             src={vendor.profileImage}
             alt={vendor.name}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-110"
           />
-          
+
           {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent" />
 
           {/* Featured Badge */}
           {vendor.isPremium && (

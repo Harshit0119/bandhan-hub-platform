@@ -8,13 +8,14 @@ export interface User {
   email: string
   name: string | null
   isVendor: boolean
+  vendorId: string | null
 }
 
 interface AuthContextType {
   user: User | null
   isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
-  signup: (email: string, password: string, name: string, isVendor: boolean) => Promise<void>
+  login: (email: string, password: string) => Promise<User>
+  signup: (email: string, password: string, name: string, isVendor: boolean) => Promise<any>
   logout: () => Promise<void>
 }
 
@@ -26,26 +27,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // 🔹 Fetch profile
   const fetchUserProfile = async (userId: string, email: string): Promise<User | null> => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle()
+    for (let i = 0; i < 3; i++) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle()
 
-    if (error) {
-      console.error("Error fetching profile:", error)
-      return null
-    }
-    if (!data) {
-      return null
-    }
+      if (profile) {
+        const { data: vendor } = await supabase
+          .from('vendors')
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle()
 
-    return {
-      id: userId,
-      email,
-      name: data.name,
-      isVendor: data.is_vendor,
+        return {
+          id: userId,
+          email,
+          name: profile.name,
+          isVendor: profile.is_vendor ?? false,
+          vendorId: vendor?.id || null,
+        }
+      }
+      await new Promise(res => setTimeout(res, 500)) // retry delay
     }
+    return null
   }
 
   // 🔹 Session check
@@ -72,8 +78,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           if (profile) {
             setUser(profile)
-          } else {
-            console.warn("Profile not ready yet")
           }
         } else {
           setUser(null)
@@ -113,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isVendor = false
   ) => {
     // 1. Sign up
-    const {data, error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -125,8 +129,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     if (error) throw error
+    
+    const user = data.user
+    if (!user) return data
 
-   return data
+    // 2. Wait a bit (important for Supabase sync)
+    await new Promise((res) => setTimeout(res, 500))
+
+    // 3. Create profile manually (SAFE)
+    await supabase.from('profiles').upsert({
+      id: user.id,
+      name,
+      is_vendor: isVendor,
+    })
+
+    // 4. ✅ Create vendor row if vendor
+    if (isVendor) {
+      await supabase.from('vendors').upsert({
+        user_id: user.id,
+        name: '',
+        category: '',
+        city: '',
+        experience: '',
+        about: '',
+        min_price: 0,
+        max_price: 0,
+      })
+    }
+
+    return data
   }
 
   // 🔹 Logout

@@ -6,11 +6,11 @@ import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { VendorCard } from '@/components/vendor-card'
 import { VendorsFilter } from '@/components/vendors-filter'
-import { filterVendors, getAllVendors } from '@/lib/mock-data'
 import { FavoritesProvider } from '@/lib/favorites-store'
 import { Vendor } from '@/lib/types'
 import { Loader2 } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { supabase } from '@/lib/supabase'
 
 function VendorsContent() {
   const searchParams = useSearchParams()
@@ -23,18 +23,46 @@ function VendorsContent() {
   const maxBudget = searchParams.get('maxBudget') ? parseInt(searchParams.get('maxBudget')!) : undefined
 
   useEffect(() => {
-    setIsLoading(true)
-    // TODO: Replace with Supabase query
-    // Shows ALL vendors (both free and paid) - homepage only shows paid vendors
-    const timer = setTimeout(() => {
-      if (category || city || minBudget || maxBudget) {
-        setVendors(filterVendors(category, city, minBudget, maxBudget))
-      } else {
-        setVendors(getAllVendors())
+    const fetchVendors = async () => {
+      setIsLoading(true)
+
+      let query = supabase.from('vendors').select('*')
+
+      if (category) query = query.eq('category', category)
+      if (city) query = query.ilike('city', `%${city}%`)
+      if (minBudget) query = query.gte('min_price', minBudget)
+      if (maxBudget) query = query.lte('max_price', maxBudget)
+
+      const { data, error } = await query
+
+      if (error) {
+        console.error("Error fetching vendors:", error)
+        setIsLoading(false)
+        return
       }
+      const formatted = data.map((v) => ({
+        ...v,
+        coverImage: v.cover_image || '/placeholder.jpg',
+        profileImage: v.profile_image || '/placeholder.jpg',
+        gallery: [],
+        services: [],
+        views: 0,
+        favoritesCount: 0,
+        minPrice: v.min_price,
+        maxPrice: v.max_price,
+        isPremium: v.is_premium,
+        whatsapp: v.whatsapp,
+        instagram: v.instagram,
+        phone: v.phone,
+        experience: v.experience,
+        about: v.about,
+      }))
+
+      setVendors(formatted)
       setIsLoading(false)
-    }, 300)
-    return () => clearTimeout(timer)
+    }
+
+    fetchVendors()
   }, [category, city, minBudget, maxBudget])
 
   return (
@@ -62,8 +90,8 @@ function VendorsContent() {
 
           {/* Filters & Results */}
           <section className="container mx-auto px-4 py-8">
-            <VendorsFilter 
-              initialCategory={category} 
+            <VendorsFilter
+              initialCategory={category}
               initialCity={city}
               initialMinBudget={minBudget}
               initialMaxBudget={maxBudget}
