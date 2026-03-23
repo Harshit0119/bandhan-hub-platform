@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   description: 'Find and connect with the best wedding vendors across India. From photographers to makeup artists, planners to decorators - BandhanHub is your one-stop destination for all wedding services.',
   keywords: ['wedding vendors', 'wedding planners', 'photographers', 'makeup artists', 'Indian weddings', 'wedding marketplace',],
   icons: {
-    icon: "/favicon.ico",
+    icon: "/favicon.png",
   },
   openGraph: {
     title: 'BandhanHub - Bringing Your Wedding Team Together',
