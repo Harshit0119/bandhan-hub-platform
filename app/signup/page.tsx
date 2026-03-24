@@ -11,6 +11,7 @@ import { FieldGroup, Field, FieldLabel } from '@/components/ui/field'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Eye, EyeOff, ArrowLeft, Loader2, Users, Store } from 'lucide-react'
 import { toast } from 'sonner'
+import Image from 'next/image'
 
 function SignupForm() {
   const router = useRouter()
@@ -69,7 +70,7 @@ function SignupForm() {
       await signup(email, password, name, activeTab === 'vendor')
 
       toast.success('Account created successfully!')
-      if(activeTab === 'vendor') {
+      if (activeTab === 'vendor') {
         router.push('/dashboard')
       } else {
         router.push('/vendors')
@@ -93,13 +94,16 @@ function SignupForm() {
           <ArrowLeft className="h-4 w-4" />
           Back to home
         </Link>
-
         <Card className="border-border shadow-xl">
           <CardHeader className="text-center pb-2">
-            <Link href="/" className="inline-block mb-4">
-              <span className="font-serif text-3xl font-bold text-primary">
-                Bandhan<span className="text-accent">Hub</span>
-              </span>
+            <Link href="/" className="flex items-center gap-2 justify-center mb-0">
+              <Image
+                src="/bandhan-hublogo.png"
+                alt="BandhanHub Logo"
+                className="h-35"
+                width={260} 
+                height={10}
+              />
             </Link>
             <CardTitle className="text-2xl font-serif">Create Account</CardTitle>
             <CardDescription>

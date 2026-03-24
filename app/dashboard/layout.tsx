@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
 import { FavoritesProvider } from '@/lib/favorites-store'
+import Image from 'next/image'
 import {
   LayoutDashboard,
   User,
@@ -39,9 +40,13 @@ function DashboardSidebar({ className }: { className?: string }) {
       {/* Logo */}
       <div className="p-6 border-b border-border">
         <Link href="/" className="flex items-center gap-2">
-          <span className="font-serif text-2xl font-bold text-primary">
-            Bandhan<span className="text-accent">Hub</span>
-          </span>
+          <Image
+            src="/bandhan-hublogo.png"
+            alt="BandhanHub Logo"
+            className="h-35 mb-0"
+            width={210}
+            height={1}
+          />
         </Link>
       </div>
 
@@ -125,10 +130,14 @@ export default function DashboardLayout({
 
         {/* Mobile Header */}
         <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-card border-b border-border z-50 flex items-center justify-between px-4">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="font-serif text-xl font-bold text-primary">
-              Bandhan<span className="text-accent">Hub</span>
-            </span>
+          <Link href="/" className="flex items-center gap-2 justify-center">
+            <Image
+              src="/bandhan-hublogo.png"
+              alt="BandhanHub Logo"
+              className="h-29"
+              width={210}
+              height={1}
+            />
           </Link>
 
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>

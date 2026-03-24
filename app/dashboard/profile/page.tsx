@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/select'
 import { FieldGroup, Field, FieldLabel } from '@/components/ui/field'
 import { VENDOR_CATEGORIES } from '@/lib/types'
-import { Camera, Loader2, Save } from 'lucide-react'
+import { Camera, Loader2, Save, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
@@ -84,6 +84,35 @@ export default function ProfileEditPage() {
     fetchVendor()
 
   }, [user])
+
+  // ================= Delete Image =================
+  const handleDeleteImage = async (id: string, imageUrl: string) => {
+    console.log("Deleting:", id)
+
+    const { data, error } = await supabase
+      .from('vendor_images')
+      .delete()
+      .eq('id', id)
+      .select()
+
+    if (error) {
+      console.error("DELETE ERROR:", error)
+      toast.error('Delete failed')
+      return
+    }
+
+    console.log("Deleted from DB:", data)
+
+    // delete from storage
+    const path = imageUrl.split('/bandhan-hub/')[1]
+    if (path) {
+      await supabase.storage.from('bandhan-hub').remove([path])
+    }
+
+    setGallery((prev) => prev.filter((img) => img.id !== id))
+
+    toast.success('Image deleted')
+  }
 
   // ================= FETCH GALLERY =================
   const fetchGallery = async () => {
@@ -314,18 +343,26 @@ export default function ProfileEditPage() {
                   {gallery.map((img, index) => (
                     <div
                       key={img.id}
-                      className="relative aspect-square cursor-pointer"
-                      onClick={() => {
-                        setSelectedIndex(index)
-                        setZoom(1)
-                      }}
+                      className="relative aspect-square cursor-pointer group"
+
                     >
                       <Image
                         src={img.image_url}
                         alt="gallery"
                         fill
                         className="object-cover rounded-lg"
+                        onClick={() => {
+                          setSelectedIndex(index)
+                          setZoom(1)
+                        }}
                       />
+                      {/* DELETE BUTTON */}
+                      <button
+                        onClick={() => handleDeleteImage(img.id, img.image_url)}
+                        className="absolute top-2 right-2 bg-black/60 p-1 rounded-full opacity-0 group-hover:opacity-100 transition"
+                      >
+                        <Trash2 className="text-white w-4 h-4" />
+                      </button>
                     </div>
                   ))}
 
@@ -444,7 +481,7 @@ export default function ProfileEditPage() {
                       <Input
                         value={formData.instagram}
                         onChange={(e) => handleChange('instagram', e.target.value)}
-                        placeholder="yourusername or page link"
+                        placeholder="your user name"
                       />
                     </Field>
                   </FieldGroup>
@@ -499,6 +536,7 @@ export default function ProfileEditPage() {
           </div>
         </form>
       </motion.div>
+      
       {/* ===== FULLSCREEN IMAGE VIEWER ===== */}
       {selectedIndex !== null && (
         <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center">

@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { FieldGroup, Field, FieldLabel } from '@/components/ui/field'
 import { Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import Image from 'next/image'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -77,10 +78,14 @@ export default function LoginPage() {
 
         <Card className="border-border shadow-xl">
           <CardHeader className="text-center pb-2">
-            <Link href="/" className="inline-block mb-4">
-              <span className="font-serif text-3xl font-bold text-primary">
-                Bandhan<span className="text-accent">Hub</span>
-              </span>
+            <Link href="/" className="flex items-center gap-2 justify-center mb-0">
+              <Image
+                src="/bandhan-hublogo.png"
+                alt="BandhanHub Logo"
+                className="h-35"
+                width={260}
+                height={10}
+              />
             </Link>
             <CardTitle className="text-2xl font-serif">Welcome Back</CardTitle>
             <CardDescription>

@@ -23,11 +23,11 @@ import {
   Eye,
   ArrowLeft,
   Loader2,
-  Clock
+  Clock,
+  Images
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
-import { set } from 'date-fns'
 
 interface VendorProfileContentProps {
   vendor: Vendor
@@ -37,6 +37,9 @@ function VendorProfileContent({ vendor }: VendorProfileContentProps) {
   const router = useRouter()
   const { user } = useAuth()
   const { isFavorite, addFavorite, removeFavorite, addRecentlyViewed } = useFavorites()
+
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
+  const [zoom, setZoom] = useState(1)
 
   useEffect(() => {
     if (user) {
@@ -257,6 +260,10 @@ function VendorProfileContent({ vendor }: VendorProfileContentProps) {
                         viewport={{ once: true }}
                         transition={{ delay: index * 0.1 }}
                         className="relative aspect-square rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity bg-secondary"
+                        onClick={() => {
+                          setSelectedIndex(index)
+                          setZoom(1)
+                        }}
                       >
                         <Image
                           src={image}
@@ -322,6 +329,81 @@ function VendorProfileContent({ vendor }: VendorProfileContentProps) {
       </main>
 
       <Footer />
+      {/* ✅ FULLSCREEN VIEWER */}
+      {selectedIndex !== null && (
+        <div
+          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center"
+          onClick={() => setSelectedIndex(null)}
+        >
+          {/* CLOSE */}
+          <button
+            className="absolute top-4 right-4 text-white text-3xl"
+            onClick={() => setSelectedIndex(null)}
+          >
+            ✕
+          </button>
+
+          {/* PREV */}
+          <button
+            className="absolute left-4 text-white text-4xl"
+            onClick={(e) => {
+              e.stopPropagation()
+              setSelectedIndex((prev) =>
+                prev === 0 ? vendor.gallery.length - 1 : (prev as number) - 1
+              )
+            }}
+          >
+            ‹
+          </button>
+
+          {/* IMAGE */}
+          <div
+            className="flex items-center justify-center w-full h-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={vendor.gallery[selectedIndex]}
+              className="max-h-[90%] max-w-[90%]"
+              style={{ transform: `scale(${zoom})` }}
+            />
+          </div>
+
+          {/* NEXT */}
+          <button
+            className="absolute right-4 text-white text-4xl"
+            onClick={(e) => {
+              e.stopPropagation()
+              setSelectedIndex((prev) =>
+                prev === vendor.gallery.length - 1 ? 0 : (prev as number) + 1
+              )
+            }}
+          >
+            ›
+          </button>
+
+          {/* ZOOM */}
+          <div className="absolute bottom-6 flex gap-4">
+            <button
+              className="bg-white px-3 py-1 rounded"
+              onClick={(e) => {
+                e.stopPropagation()
+                setZoom((z) => Math.max(1, z - 0.5))
+              }}
+            >
+              -
+            </button>
+            <button
+              className="bg-white px-3 py-1 rounded"
+              onClick={(e) => {
+                e.stopPropagation()
+                setZoom((z) => z + 0.5)
+              }}
+            >
+              +
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -344,6 +426,7 @@ export default function VendorProfilePage({ params }: { params: Promise<{ id: st
     const fetchVendor = async () => {
       setIsLoading(true)
 
+      // 1. Get vendor
       const { data, error } = await supabase
         .from('vendors')
         .select('*')
@@ -355,24 +438,36 @@ export default function VendorProfilePage({ params }: { params: Promise<{ id: st
         setIsLoading(false)
         return
       }
+
+      // 2. Get gallery images
+      const { data: images } = await supabase
+        .from('vendor_images')
+        .select('image_url')
+        .eq('vendor_id', data.id)
+
+      // 3. Set vendor with gallery
       setVendor({
         ...data,
         coverImage: data.cover_image || '/placeholder.jpg',
         profileImage: data.profile_image || '/placeholder.jpg',
-        gallery: [],
+
+        gallery: images?.map((img) => img.image_url) || [],
+
         services: [],
         views: 0,
         favoritesCount: 0,
+
         minPrice: Number(data.min_price) || 0,
         maxPrice: Number(data.max_price) || 0,
+
         isPremium: data.is_premium,
         whatsapp: data.whatsapp,
         instagram: data.instagram,
         phone: data.phone,
         experience: data.experience,
         about: data.about,
-
       })
+
       setIsLoading(false)
     }
     fetchVendor()
