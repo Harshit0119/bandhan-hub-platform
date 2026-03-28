@@ -76,7 +76,7 @@ export default function InquiriesPage() {
                                 const link = `${window.location.origin}/vendor/${vendorSlug || vendorId}`
                                 navigator.clipboard.writeText(link)
                                 toast.success("Link Copied!", {
-                                    description: "Share it with your customers 🚀"
+                                    description: "Share it with your customers🚀"
                                 })
                             }}
                         >
