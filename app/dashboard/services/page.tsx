@@ -55,6 +55,7 @@ export default function ServicesPage() {
     price_type: 'starting',
   })
 
+  
   // ✅ FETCH DATA
   useEffect(() => {
     const fetchData = async () => {
