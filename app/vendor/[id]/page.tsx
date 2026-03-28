@@ -36,6 +36,13 @@ interface VendorProfileContentProps {
 function VendorProfileContent({ vendor }: VendorProfileContentProps) {
   const router = useRouter()
   const { user } = useAuth()
+  const [showInquiry, setShowInquiry] = useState(false)
+  const [inquiryData, setInquiryData] = useState({
+    name: '',
+    phone: '',
+    event_date: '',
+    message: '',
+  })
   const { isFavorite, addFavorite, removeFavorite, addRecentlyViewed } = useFavorites()
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
@@ -227,6 +234,9 @@ function VendorProfileContent({ vendor }: VendorProfileContentProps) {
                     Call
                   </Button>
                 )}
+                <Button onClick={() => setShowInquiry(true)}>
+                  Send Inquiry
+                </Button>
               </div>
             </div>
           </motion.div>
@@ -323,6 +333,78 @@ function VendorProfileContent({ vendor }: VendorProfileContentProps) {
                   )}
                 </CardContent>
               </Card>
+              {showInquiry && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+                  <div className="bg-white p-6 rounded-xl w-full max-w-md">
+
+                    <h2 className="text-xl font-bold mb-4">Send Inquiry</h2>
+
+                    <input
+                      placeholder="Your Name"
+                      className="w-full border p-2 mb-3"
+                      value={inquiryData.name}
+                      onChange={(e) =>
+                        setInquiryData({ ...inquiryData, name: e.target.value })
+                      }
+                    />
+
+                    <input
+                      placeholder="Phone"
+                      className="w-full border p-2 mb-3"
+                      value={inquiryData.phone}
+                      onChange={(e) =>
+                        setInquiryData({ ...inquiryData, phone: e.target.value })
+                      }
+                    />
+                    <p className="text-sm text-muted-foreground mb-1"><b>Event Date</b></p>
+                    <input
+                      type="date"
+                      className="w-full border p-2 mb-3"
+                      value={inquiryData.event_date}
+                      onChange={(e) =>
+                        setInquiryData({ ...inquiryData, event_date: e.target.value })
+                      }
+                    />
+
+                    <textarea
+                      placeholder="Message"
+                      className="w-full border p-2 mb-3"
+                      value={inquiryData.message}
+                      onChange={(e) =>
+                        setInquiryData({ ...inquiryData, message: e.target.value })
+                      }
+                    />
+
+                    <div className="flex gap-3">
+                      <Button
+                        onClick={async () => {
+                          const { error } = await supabase.from('inquiries').insert({
+                            vendor_id: vendor.id,
+                            name: inquiryData.name,
+                            phone: inquiryData.phone,
+                            event_date: inquiryData.event_date,
+                            message: inquiryData.message,
+                          })
+
+                          if (error) {
+                            alert('Failed')
+                            return
+                          }
+
+                          alert('Inquiry sent!')
+                          setShowInquiry(false)
+                        }}
+                      >
+                        Submit
+                      </Button>
+
+                      <Button variant="outline" onClick={() => setShowInquiry(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -427,25 +509,38 @@ export default function VendorProfilePage({ params }: { params: Promise<{ id: st
       setIsLoading(true)
 
       // 1. Get vendor
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('vendors')
         .select('*')
-        .eq('id', resolvedParams.id)
-        .single()
+        .eq('slug', resolvedParams.id)
+        .maybeSingle()
 
-      if (error) {
-        console.error("Error fetching vendor:", error)
+      // 🔹 2. If NOT found → fallback to ID
+      if (!data) {
+        const res = await supabase
+          .from('vendors')
+          .select('*')
+          .eq('id', resolvedParams.id)
+          .maybeSingle()
+
+        data = res.data
+        error = res.error
+      }
+
+      // 🔹 3. Handle final error
+      if (!data) {
+        console.error("Vendor not found")
         setIsLoading(false)
         return
       }
 
-      // 2. Get gallery images
+      // 4. Get gallery images
       const { data: images } = await supabase
         .from('vendor_images')
         .select('image_url')
         .eq('vendor_id', data.id)
 
-      // 3. Set vendor with gallery
+      // 5. Set vendor with gallery
       setVendor({
         ...data,
         coverImage: data.cover_image || '/placeholder.jpg',

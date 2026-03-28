@@ -21,11 +21,12 @@ import {
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Mail } from 'lucide-react'
 
 const sidebarLinks = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Profile', href: '/dashboard/profile', icon: User },
+   { name: 'Inquiries', href: '/dashboard/inquiries', icon: Mail }, 
   { name: 'Services & Pricing', href: '/dashboard/services', icon: Package },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { name: 'Subscription', href: '/dashboard/subscription', icon: CreditCard },

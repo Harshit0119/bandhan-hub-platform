@@ -30,6 +30,28 @@ export default function ProfileEditPage() {
   const [isLoading, setIsLoading] = useState(false)
   const profileInputRef = useRef<HTMLInputElement | null>(null)
   const coverInputRef = useRef<HTMLInputElement | null>(null)
+  const [showSharePopup, setShowSharePopup] = useState(false)
+  const createSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w-]+/g, '')
+  }
+
+  const generateUniqueSlug = async (name: string) => {
+    const baseSlug = createSlug(name)
+
+    // check existing slugs
+    const { data } = await supabase
+      .from('vendors')
+      .select('slug')
+      .ilike('slug', `${baseSlug}%`)
+
+    if (!data || data.length === 0) return baseSlug
+
+    return `${baseSlug}-${data.length + 1}`
+  }
 
   const [formData, setFormData] = useState({
     name: '',
@@ -220,10 +242,18 @@ export default function ProfileEditPage() {
 
     if (!user) return
 
+    let slug = vendorData.slug
+
+    // ✅ only generate if not exists
+    if (!slug && formData.name) {
+      slug = await generateUniqueSlug(formData.name)
+    }
+
     const { error } = await supabase
       .from('vendors')
       .update({
         name: formData.name,
+        slug: slug,
         category: formData.category,
         city: formData.city,
         phone: formData.phone,
@@ -241,6 +271,7 @@ export default function ProfileEditPage() {
       toast.error('Failed to update profile')
     } else {
       toast.success('Profile updated successfully!')
+      setShowSharePopup(true)
     }
 
     setIsLoading(false)
@@ -533,10 +564,11 @@ export default function ProfileEditPage() {
                 </>
               )}
             </Button>
+            <p>If taking long time to save refresh once.</p>
           </div>
         </form>
       </motion.div>
-      
+
       {/* ===== FULLSCREEN IMAGE VIEWER ===== */}
       {selectedIndex !== null && (
         <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
@@ -601,7 +633,61 @@ export default function ProfileEditPage() {
               +
             </button>
           </div>
+        </div>
+      )}
+      {/* SHARE POPUP */}
+      {showSharePopup && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
 
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md text-center shadow-xl">
+
+            <h2 className="text-2xl font-bold mb-2">
+              🎉 Profile Ready!
+            </h2>
+
+            <p className="text-muted-foreground mb-4">
+              Share your profile with customers and start getting bookings
+            </p>
+
+            <div className="bg-gray-100 p-3 rounded mb-4 text-sm break-all">
+              {`${window.location.origin}/vendor/${vendorData.slug}`}
+            </div>
+
+            <div className="flex flex-col gap-3">
+
+              {/* COPY LINK */}
+              <Button
+                onClick={() => {
+                  navigator.clipboard.writeText(
+                    `${window.location.origin}/vendor/${vendorData.slug}`
+                  )
+                  toast.success("Link copied!")
+                }}
+              >
+                Copy Link
+              </Button>
+
+              {/* WHATSAPP SHARE */}
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const url = `${window.location.origin}/vendor/${vendorData.slug}`
+                  window.open(`https://wa.me/?text=Check my services: ${url}`)
+                }}
+              >
+                Share on WhatsApp
+              </Button>
+
+              {/* CLOSE */}
+              <Button
+                variant="ghost"
+                onClick={() => setShowSharePopup(false)}
+              >
+                Close
+              </Button>
+
+            </div>
+          </div>
         </div>
       )}
     </div >
