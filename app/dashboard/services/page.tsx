@@ -80,7 +80,7 @@ export default function ServicesPage() {
       const { data: vendor, error: vendorError } = await supabase
         .from('vendors')
         .select('id')
-        .eq('user_id', user.id)
+        .eq('user_id', supaUser.id)
         .single()
 
       if (vendorError) {
