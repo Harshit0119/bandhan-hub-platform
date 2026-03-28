@@ -55,6 +55,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     })
   }
 
+  
   return (
     <FavoritesContext.Provider value={{ 
       favorites, 
