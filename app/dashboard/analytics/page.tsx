@@ -1,212 +1,275 @@
 'use client'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { mockVendors } from '@/lib/mock-data'
-import { Eye, Heart, MousePointer, TrendingUp, Calendar } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/lib/auth-context'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card'
+import {
+  Eye,
+  Heart,
+  MousePointer,
+  MessageSquare,
+  TrendingUp,
+  Calendar,
+} from 'lucide-react'
 import { motion } from 'framer-motion'
+import { Loader2 } from 'lucide-react'
 
 export default function AnalyticsPage() {
-  // TODO: Fetch from Supabase
-  const vendorData = mockVendors[0]
+  const { user, isLoading } = useAuth()
 
-  // Mock analytics data
-  const weeklyViews = [
-    { day: 'Mon', views: 45 },
-    { day: 'Tue', views: 52 },
-    { day: 'Wed', views: 38 },
-    { day: 'Thu', views: 65 },
-    { day: 'Fri', views: 78 },
-    { day: 'Sat', views: 95 },
-    { day: 'Sun', views: 82 },
-  ]
+  const [stats, setStats] = useState({
+    views: 0,
+    favorites: 0,
+    contacts: 0,
+    inquiries: 0,
+  })
 
-  const maxViews = Math.max(...weeklyViews.map(d => d.views))
+  const [weeklyViews, setWeeklyViews] = useState<
+    { day: string; views: number }[]
+  >([])
+  const [loading, setLoading] = useState(true)
 
-  const stats = [
-    { 
-      label: 'Total Profile Views', 
-      value: vendorData.views.toLocaleString(), 
-      icon: Eye, 
-      change: '+12%',
-      description: 'vs last month'
-    },
-    { 
-      label: 'Contact Clicks', 
-      value: vendorData.contactClicks.toString(), 
-      icon: MousePointer, 
-      change: '+8%',
-      description: 'WhatsApp, Instagram, Call'
-    },
-    { 
-      label: 'Profile Favorites', 
-      value: vendorData.favoritesCount.toString(), 
-      icon: Heart, 
-      change: '+5%',
-      description: 'couples saved your profile'
-    },
-    { 
-      label: 'Conversion Rate', 
-      value: `${((vendorData.contactClicks / vendorData.views) * 100).toFixed(1)}%`, 
-      icon: TrendingUp, 
-      change: '+2%',
-      description: 'views to contact'
-    },
-  ]
+  useEffect(() => {
+    if (!user?.vendorId) return
 
-  const topSources = [
-    { source: 'Homepage Featured', visits: 1250, percentage: 51 },
-    { source: 'Category Search', visits: 680, percentage: 28 },
-    { source: 'Direct Link', visits: 320, percentage: 13 },
-    { source: 'City Filter', visits: 200, percentage: 8 },
-  ]
+    const fetchAnalytics = async () => {
+      setLoading(true)
+
+      const vendorId = user.vendorId
+
+      // 🔹 TOTAL COUNTS
+      const { count: views } = await supabase
+        .from('profile_views')
+        .select('*', { count: 'exact', head: true })
+        .eq('vendor_id', vendorId)
+
+      const { count: favorites } = await supabase
+        .from('favorites')
+        .select('*', { count: 'exact', head: true })
+        .eq('vendor_id', vendorId)
+
+      const { count: contacts } = await supabase
+        .from('contact_clicks')
+        .select('*', { count: 'exact', head: true })
+        .eq('vendor_id', vendorId)
+
+      const { count: inquiries } = await supabase
+        .from('inquiries')
+        .select('*', { count: 'exact', head: true })
+        .eq('vendor_id', vendorId)
+
+      // 🔹 WEEKLY VIEWS
+      const { data: viewsData } = await supabase
+        .from('profile_views')
+        .select('viewed_at')
+        .eq('vendor_id', vendorId)
+
+      const last7Days = Array.from({ length: 7 }).map((_, i) => {
+        const date = new Date()
+        date.setDate(date.getDate() - i)
+        return date.toISOString().split('T')[0]
+      }).reverse()
+
+      const grouped = last7Days.map((date) => {
+        const count =
+          viewsData?.filter((v) =>
+            v.viewed_at.startsWith(date)
+          ).length || 0
+
+        return {
+          day: new Date(date).toLocaleDateString('en-US', {
+            weekday: 'short',
+          }),
+          views: count,
+        }
+      })
+
+      setWeeklyViews(grouped)
+
+      setStats({
+        views: views || 0,
+        favorites: favorites || 0,
+        contacts: contacts || 0,
+        inquiries: inquiries || 0,
+      })
+
+      setLoading(false)
+    }
+
+    fetchAnalytics()
+  }, [user])
+
+  if (isLoading || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  const maxViews = Math.max(...weeklyViews.map((d) => d.views), 1)
+
+  // 🔥 NEW: Conversion Rate
+  const conversionRate =
+    stats.views > 0
+      ? ((stats.contacts / stats.views) * 100).toFixed(1)
+      : 0
+
+  const totalWeekly = weeklyViews.reduce((sum, d) => sum + d.views, 0)
+  const peakDay = weeklyViews.reduce((prev, curr) =>
+    curr.views > prev.views ? curr : prev,
+    weeklyViews[0] || { day: '', views: 0 }
+  )
 
   return (
-    <div className="p-6 lg:p-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <div className="mb-8">
-          <h1 className="font-serif text-3xl font-bold text-foreground">
-            Analytics
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Track your profile performance and engagement
+    <div className="p-6 lg:p-8 space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold">Analytics</h1>
+        <p className="text-muted-foreground">
+          Track your performance & grow your business
+        </p>
+      </div>
+
+      {/* 🔥 STATS */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        {[
+          { label: 'Views', value: stats.views, icon: Eye },
+          { label: 'Favorites', value: stats.favorites, icon: Heart },
+          { label: 'Contacts', value: stats.contacts, icon: MousePointer },
+          { label: 'Inquiries', value: stats.inquiries, icon: MessageSquare },
+        ].map((stat, i) => {
+          const Icon = stat.icon
+          return (
+            <motion.div key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex justify-between mb-2">
+                    <Icon className="text-primary" />
+                    <span className="text-sm text-muted-foreground">
+                      {stat.label}
+                    </span>
+                  </div>
+                  <div className="text-3xl font-bold">{stat.value}</div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )
+        })}
+      </div>
+
+      {/* 🔥 CONVERSION */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Conversion Rate
+          </CardTitle>
+          <CardDescription>
+            How many visitors contact you
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <div className="text-4xl font-bold text-primary">
+            {conversionRate}%
+          </div>
+          <p className="text-sm text-muted-foreground mt-2">
+            {stats.contacts} contacts from {stats.views} views
           </p>
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => {
-            const Icon = stat.icon
-            return (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="p-2 bg-primary/10 rounded-lg">
-                        <Icon className="h-5 w-5 text-primary" />
-                      </div>
-                      <span className="text-sm text-green-600 font-medium">{stat.change}</span>
-                    </div>
-                    <div className="text-3xl font-bold text-foreground mb-1">{stat.value}</div>
-                    <div className="text-sm text-muted-foreground">{stat.label}</div>
-                    <div className="text-xs text-muted-foreground mt-1">{stat.description}</div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )
-          })}
-        </div>
+      {/* 📊 WEEKLY GRAPH */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Weekly Views
+          </CardTitle>
+          <CardDescription>Last 7 days performance</CardDescription>
+        </CardHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Weekly Views Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Weekly Views
-              </CardTitle>
-              <CardDescription>Profile views over the last 7 days</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-end justify-between h-48 gap-2">
-                {weeklyViews.map((data, index) => (
-                  <motion.div
-                    key={data.day}
-                    initial={{ height: 0 }}
-                    animate={{ height: `${(data.views / maxViews) * 100}%` }}
-                    transition={{ delay: index * 0.1, duration: 0.5 }}
-                    className="flex-1 flex flex-col items-center gap-2"
-                  >
-                    <div 
-                      className="w-full bg-primary/80 rounded-t-md hover:bg-primary transition-colors cursor-pointer"
-                      style={{ height: '100%' }}
-                    />
-                    <span className="text-xs text-muted-foreground">{data.day}</span>
-                  </motion.div>
-                ))}
+        <CardContent>
+          <div className="flex items-end gap-3 h-48">
+            {weeklyViews.map((d, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                <motion.div
+                  initial={{ height: 0 }}
+                  animate={{ height: `${(d.views / maxViews) * 100}%` }}
+                  className="w-full bg-primary rounded-t-md"
+                />
+                <span className="text-xs">{d.day}</span>
               </div>
-              <div className="mt-6 flex items-center justify-between text-sm text-muted-foreground">
-                <span>Total: {weeklyViews.reduce((sum, d) => sum + d.views, 0)} views</span>
-                <span>Peak: Saturday ({Math.max(...weeklyViews.map(d => d.views))} views)</span>
-              </div>
-            </CardContent>
-          </Card>
+            ))}
+          </div>
 
-          {/* Traffic Sources */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Traffic Sources
-              </CardTitle>
-              <CardDescription>Where your visitors come from</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {topSources.map((source, index) => (
-                  <motion.div
-                    key={source.source}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-foreground">{source.source}</span>
-                      <span className="text-sm text-muted-foreground">{source.visits} visits</span>
-                    </div>
-                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                      <motion.div 
-                        className="h-full bg-primary rounded-full"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${source.percentage}%` }}
-                        transition={{ delay: index * 0.1, duration: 0.5 }}
-                      />
-                    </div>
-                    <span className="text-xs text-muted-foreground">{source.percentage}%</span>
-                  </motion.div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <div className="mt-4 flex justify-between text-sm text-muted-foreground">
+            <span>Total: {totalWeekly} views</span>
+            <span>
+              Peak: {peakDay?.day} ({peakDay?.views})
+            </span>
+          </div>
+        </CardContent>
 
-          {/* Performance Tips */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Performance Insights</CardTitle>
-              <CardDescription>Tips to improve your profile visibility</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                  <div className="text-green-600 font-semibold mb-2">Great!</div>
-                  <p className="text-sm text-green-700">
-                    Your contact rate is above average. Couples are interested in your services!
-                  </p>
-                </div>
-                <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
-                  <div className="text-amber-600 font-semibold mb-2">Tip</div>
-                  <p className="text-sm text-amber-700">
-                    Add more photos to your gallery. Profiles with 6+ images get 40% more views.
-                  </p>
-                </div>
-                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="text-blue-600 font-semibold mb-2">Suggestion</div>
-                  <p className="text-sm text-blue-700">
-                    Update your pricing info. Profiles with clear pricing get 25% more inquiries.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </motion.div>
+        <CardTitle className="gap-2 ml-6">Summary</CardTitle>
+        <CardContent className="grid md:grid-cols-3 gap-4">
+
+          <div className="p-4 bg-blue-50 rounded">
+            <p className="text-sm text-muted-foreground">Total Weekly Views</p>
+            <p className="text-xl font-bold">{totalWeekly}</p>
+          </div>
+
+          <div className="p-4 bg-green-50 rounded">
+            <p className="text-sm text-muted-foreground">Best Day</p>
+            <p className="text-xl font-bold">{peakDay.day}</p>
+          </div>
+
+          <div className="p-4 bg-purple-50 rounded">
+            <p className="text-sm text-muted-foreground">Conversion Rate</p>
+            <p className="text-xl font-bold">{conversionRate}%</p>
+          </div>
+        </CardContent>
+      </Card>
+
+
+      {/* 💡 SMART INSIGHTS */}
+      <Card>
+        <CardHeader>
+          <CardTitle>AI Insights</CardTitle>
+        </CardHeader>
+
+        <CardContent className="grid md:grid-cols-3 gap-4">
+
+          <div className="p-4 bg-green-50 rounded">
+            <p className="font-semibold text-green-600">Strong Performance</p>
+            <p className="text-sm">
+              Your profile is converting well. Keep sharing your link 🔥
+            </p>
+          </div>
+
+          <div className="p-4 bg-yellow-50 rounded">
+            <p className="font-semibold text-yellow-600">Growth Tip</p>
+            <p className="text-sm">
+              Vendors with 5+ images get 2x more inquiries
+            </p>
+          </div>
+
+          <div className="p-4 bg-blue-50 rounded">
+            <p className="font-semibold text-blue-600">Action</p>
+            <p className="text-sm">
+              Share your profile on WhatsApp groups to boost traffic 🚀
+            </p>
+          </div>
+
+        </CardContent>
+      </Card>
     </div>
   )
 }

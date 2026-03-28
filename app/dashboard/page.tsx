@@ -1,115 +1,209 @@
 'use client'
 
 import { useAuth } from '@/lib/auth-context'
-import { useFavorites } from '@/lib/favorites-store'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { mockVendors, getVendorById } from '@/lib/mock-data'
-import { Eye, Heart, MousePointer, TrendingUp, Star, ArrowRight, Clock } from 'lucide-react'
+import { Eye, Heart, MousePointer, TrendingUp, Star, ArrowRight, Loader2 } from 'lucide-react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { motion } from 'framer-motion'
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
+import Image from 'next/image'
+import { Clock } from 'lucide-react'
+import { RecentLeads } from '@/components/recent-leads'
 
 export default function DashboardPage() {
   const { user } = useAuth()
-  const { recentlyViewed } = useFavorites()
 
-  // TODO: Get actual vendor data from Supabase
-  const vendorData = user?.vendorId ? mockVendors[0] : null
+  const [stats, setStats] = useState({
+    views: 0,
+    favorites: 0,
+    contacts: 0,
+    inquiries: 0,
+  })
 
-  const stats = [
-    { 
-      label: 'Profile Views', 
-      value: vendorData?.views.toLocaleString() || '0', 
-      icon: Eye, 
-      change: '+12%',
-      color: 'text-blue-600 bg-blue-100'
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [recentVendors, setRecentVendors] = useState<any[]>([])
+
+  useEffect(() => {
+    if (!user?.vendorId) return
+
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true)
+
+        const vendorId = user.vendorId
+
+        const [
+          { count: views },
+          { count: favorites },
+          { count: contacts },
+          { count: inquiries },
+        ] = await Promise.all([
+          supabase
+            .from('profile_views')
+            .select('*', { count: 'exact', head: true })
+            .eq('vendor_id', vendorId),
+
+          supabase
+            .from('favorites')
+            .select('*', { count: 'exact', head: true })
+            .eq('vendor_id', vendorId),
+
+          supabase
+            .from('contact_clicks')
+            .select('*', { count: 'exact', head: true })
+            .eq('vendor_id', vendorId),
+
+          supabase
+            .from('inquiries')
+            .select('*', { count: 'exact', head: true })
+            .eq('vendor_id', vendorId),
+        ])
+
+        setStats({
+          views: views || 0,
+          favorites: favorites || 0,
+          contacts: contacts || 0,
+          inquiries: inquiries || 0,
+        })
+
+        // Fetch recently viewed vendors for non-vendors
+        if (!user?.isVendor) {
+          const { data } = await supabase
+            .from('recently_viewed')
+            .select('vendor_id, vendors(*)')
+            .eq('user_id', user?.id)
+            .order('viewed_at', { ascending: false })
+            .limit(5)
+
+          const vendors = data?.map((item: any) => item.vendors).filter(Boolean) || []
+          setRecentVendors(vendors)
+        }
+      } catch (err) {
+        console.error(err)
+        setError('Failed to load dashboard data')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchDashboardData()
+  }, [user])
+
+  // 🔹 LOADING STATE
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  // 🔹 ERROR STATE
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-red-500">{error}</p>
+      </div>
+    )
+  }
+
+  // 🔹 SAFETY
+  if (!user?.vendorId) {
+    return (
+      <div className="p-6">
+        <p>No vendor profile found.</p>
+      </div>
+    )
+  }
+
+  const statsData = [
+    {
+      label: 'Profile Views',
+      value: stats.views,
+      icon: Eye,
+      color: 'text-blue-600 bg-blue-100',
     },
-    { 
-      label: 'Contact Clicks', 
-      value: vendorData?.contactClicks.toString() || '0', 
-      icon: MousePointer, 
-      change: '+8%',
-      color: 'text-green-600 bg-green-100'
+    {
+      label: 'Contact Clicks',
+      value: stats.contacts,
+      icon: MousePointer,
+      color: 'text-green-600 bg-green-100',
     },
-    { 
-      label: 'Favorites', 
-      value: vendorData?.favoritesCount.toString() || '0', 
-      icon: Heart, 
-      change: '+5%',
-      color: 'text-pink-600 bg-pink-100'
+    {
+      label: 'Favorites',
+      value: stats.favorites,
+      icon: Heart,
+      color: 'text-pink-600 bg-pink-100',
     },
-    { 
-      label: 'Leads Generated', 
-      value: '23', 
-      icon: TrendingUp, 
-      change: '+15%',
-      color: 'text-purple-600 bg-purple-100'
+    {
+      label: 'Leads Generated',
+      value: stats.inquiries,
+      icon: TrendingUp,
+      color: 'text-purple-600 bg-purple-100',
     },
   ]
 
-  const recentVendors = recentlyViewed
-    .slice(0, 4)
-    .map(id => getVendorById(id))
-    .filter(Boolean)
-
   return (
     <div className="p-6 lg:p-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        {/* Header */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+
+        {/* 🔥 HEADER */}
         <div className="mb-8">
           <h1 className="font-serif text-3xl font-bold text-foreground">
             Welcome back, {user?.name}!
           </h1>
           <p className="text-muted-foreground mt-1">
-            Here&apos;s what&apos;s happening with your profile today.
+            Track your performance and grow your business 🚀
           </p>
         </div>
 
-        {/* Subscription Status */}
-        {vendorData && (
-          <Card className="mb-8 bg-linear-to-r from-primary to-primary/80 text-primary-foreground">
-            <CardContent className="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge variant="secondary" className="bg-white/20 text-white hover:bg-white/30">
-                    {vendorData.isPremium ? 'Premium' : 'Free Plan'}
-                  </Badge>
-                  {vendorData.isPremium && (
-                    <Star className="h-5 w-5 fill-accent text-accent" />
-                  )}
-                </div>
-                <h3 className="text-xl font-semibold">
-                  {vendorData.isPremium 
-                    ? 'Your profile is featured on the homepage!' 
-                    : 'Upgrade to Premium for more visibility'}
-                </h3>
-                <p className="text-primary-foreground/80 mt-1">
-                  {vendorData.isPremium 
-                    ? 'You are getting maximum exposure to couples searching for vendors.' 
-                    : 'Get featured on homepage, priority listing, and more leads.'}
-                </p>
-              </div>
-              {!vendorData.isPremium && (
-                <Link href="/dashboard/subscription">
-                  <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
-                    Upgrade Now
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              )}
-            </CardContent>
-          </Card>
-        )}
+        {/* 💰 SUBSCRIPTION */}
+        <Card className="mb-8 bg-linear-to-r from-primary to-primary/80 text-primary-foreground">
+          <CardContent className="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Badge variant="secondary" className="bg-white/20 text-white">
+                  {user?.isPremium ? 'Premium Plan' : 'Free Plan'}
+                </Badge>
 
-        {/* Stats Grid */}
+                {user?.isPremium && (
+                  <Star className="h-5 w-5 fill-accent text-accent" />
+                )}
+              </div>
+
+              <h3 className="text-xl font-semibold">
+                {user?.isPremium
+                  ? 'You are getting maximum visibility 🚀'
+                  : 'Get more leads & bookings'}
+              </h3>
+
+              <p className="text-primary-foreground/80 mt-1">
+                {user?.isPremium
+                  ? 'Your profile is prioritized in search results.'
+                  : 'Upgrade to get featured & receive more inquiries.'}
+              </p>
+            </div>
+
+            {!user?.isPremium && (
+              <Link href="/dashboard/subscription">
+                <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
+                  Upgrade Now
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* 📊 STATS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => {
+          {statsData.map((stat, index) => {
             const Icon = stat.icon
+
             return (
               <motion.div
                 key={stat.label}
@@ -121,10 +215,14 @@ export default function DashboardPage() {
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className="text-sm text-muted-foreground">{stat.label}</p>
-                        <p className="text-3xl font-bold text-foreground mt-1">{stat.value}</p>
-                        <p className="text-sm text-green-600 mt-1">{stat.change} this week</p>
+                        <p className="text-sm text-muted-foreground">
+                          {stat.label}
+                        </p>
+                        <p className="text-3xl font-bold text-foreground mt-1">
+                          {stat.value}
+                        </p>
                       </div>
+
                       <div className={`p-3 rounded-lg ${stat.color}`}>
                         <Icon className="h-5 w-5" />
                       </div>
@@ -136,6 +234,29 @@ export default function DashboardPage() {
           })}
         </div>
 
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle>Recent Leads</CardTitle>
+            <CardDescription>Latest customer inquiries</CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-3">
+            {stats.inquiries === 0 ? (
+              <p className="text-muted-foreground text-sm">
+                No leads yet
+              </p>
+            ) : (
+              <RecentLeads />
+            )}
+
+            <Link href="/dashboard/inquiries">
+              <Button variant="outline" className="w-full mt-2">
+                View All Leads
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
         {/* Quick Actions & Recently Viewed */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Quick Actions */}
@@ -146,22 +267,22 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <Link href="/dashboard/profile">
-                <Button variant="outline" className="w-full justify-start">
+                <Button variant="outline" className="w-full justify-start mb-2">
                   Edit Profile
                 </Button>
               </Link>
               <Link href="/dashboard/services">
-                <Button variant="outline" className="w-full justify-start">
+                <Button variant="outline" className="w-full justify-start mb-2">
                   Manage Services & Pricing
                 </Button>
               </Link>
               <Link href="/dashboard/analytics">
-                <Button variant="outline" className="w-full justify-start">
+                <Button variant="outline" className="w-full justify-start mb-2">
                   View Analytics
                 </Button>
               </Link>
               <Link href={`/vendor/${user?.vendorId}`}>
-                <Button variant="outline" className="w-full justify-start">
+                <Button variant="outline" className="w-full justify-start mb-2">
                   Preview Public Profile
                 </Button>
               </Link>
@@ -255,7 +376,7 @@ export default function DashboardPage() {
             </Card>
           )}
         </div>
-      </motion.div>
-    </div>
+      </motion.div >
+    </div >
   )
 }

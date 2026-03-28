@@ -9,6 +9,7 @@ export interface User {
   name: string | null
   isVendor: boolean
   vendorId: string | null
+  isPremium: boolean
 }
 
 interface AuthContextType {
@@ -37,7 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (profile) {
         const { data: vendor } = await supabase
           .from('vendors')
-          .select('id')
+          .select('id, is_premium')
           .eq('user_id', userId)
           .maybeSingle()
 
@@ -46,7 +47,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email,
           name: profile.name,
           isVendor: profile.is_vendor ?? false,
-          vendorId: vendor?.id || null,
+          vendorId: vendor?.id ?? null,
+          isPremium: vendor?.is_premium ?? false,
         }
       }
       await new Promise(res => setTimeout(res, 500)) // retry delay

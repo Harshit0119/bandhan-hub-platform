@@ -99,13 +99,88 @@ export default function InquiriesPage() {
                 <div className="space-y-4">
                     {inquiries.map((inq) => (
                         <Card key={inq.id}>
-                            <CardHeader>
-                                <CardTitle>{inq.name}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p><b>Email:</b> {inq.email}</p>
-                                <p><b>Phone:</b> {inq.phone}</p>
-                                <p className="mt-2">{inq.message}</p>
+                            <CardContent className="p-5 space-y-3">
+
+                                {/* TOP */}
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <p className="font-semibold">{inq.name}</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            {new Date(inq.created_at).toLocaleDateString()}
+                                        </p>
+                                    </div>
+
+                                    <span className="text-xs px-2 py-1 rounded bg-gray-100">
+                                        {inq.status || 'new'}
+                                    </span>
+                                </div>
+
+                                {/* MESSAGE */}
+                                <p className="text-sm text-muted-foreground">
+                                    {inq.message}
+                                </p>
+
+                                {/* CONTACT */}
+                                <div className="text-sm">
+                                    <p><b>Phone:</b> {inq.phone}</p>
+                                    {inq.email && <p><b>Email:</b> {inq.email}</p>}
+                                </div>
+
+                                {/* ACTIONS */}
+                                <div className="flex gap-2 pt-2">
+                                    <Button
+                                        size="sm"
+                                        onClick={async () => {
+                                            await supabase
+                                                .from('inquiries')
+                                                .update({ status: 'contacted' })
+                                                .eq('id', inq.id)
+
+                                            setInquiries(prev =>
+                                                prev.map(i =>
+                                                    i.id === inq.id ? { ...i, status: 'contacted' } : i
+                                                )
+                                            )
+                                        }}
+                                    >
+                                        Contacted
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={async () => {
+                                            await supabase
+                                                .from('inquiries')
+                                                .update({ status: 'booked' })
+                                                .eq('id', inq.id)
+
+                                            setInquiries(prev =>
+                                                prev.map(i =>
+                                                    i.id === inq.id ? { ...i, status: 'booked' } : i
+                                                )
+                                            )
+                                        }}
+                                    >
+                                        Booked 💰
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={async () => {
+                                            await supabase
+                                                .from('inquiries')
+                                                .update({ status: 'ignored' })
+                                                .eq('id', inq.id)
+                                            setInquiries(prev =>
+                                                prev.map(i =>
+                                                    i.id === inq.id ? { ...i, status: 'ignored' } : i
+                                                )
+                                            )
+                                        }}
+                                    >
+                                        Ignore
+                                    </Button>
+                                </div>
                             </CardContent>
                         </Card>
                     ))}

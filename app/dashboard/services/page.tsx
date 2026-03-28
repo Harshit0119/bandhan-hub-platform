@@ -1,10 +1,20 @@
 'use client'
 
-import { useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/lib/auth-context'
+
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+
 import {
   Select,
   SelectContent,
@@ -12,290 +22,341 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { FieldGroup, Field, FieldLabel } from '@/components/ui/field'
+
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from '@/components/ui/dialog'
-import { mockVendors } from '@/lib/mock-data'
-import { Service } from '@/lib/types'
+
 import { Plus, Pencil, Trash2, Loader2, Package } from 'lucide-react'
 import { toast } from 'sonner'
 import { motion } from 'framer-motion'
+import { Empty } from '@/components/ui/empty'
+import { set } from 'date-fns'
 
 export default function ServicesPage() {
-  // TODO: Fetch from Supabase
-  const vendorData = mockVendors[0]
-  const [services, setServices] = useState<Service[]>(vendorData.services)
+  const { user } = useAuth()
+
+  const [vendorId, setVendorId] = useState<string | null>(null)
+  const [services, setServices] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingService, setEditingService] = useState<Service | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [editingService, setEditingService] = useState<any | null>(null)
 
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     price: '',
-    priceType: 'starting' as Service['priceType'],
+    price_type: 'starting',
   })
+
+  // ✅ FETCH DATA
+  useEffect(() => {
+    const fetchData = async () => {
+      const {
+        data: { user: supaUser },
+      } = await supabase.auth.getUser()
+
+      if (!supaUser) {
+        console.log("NO SUPABASE USER")
+        return
+      }
+
+      console.log('USER:', user)
+
+      const session = await supabase.auth.getSession()
+      console.log("SESSION:", session)
+
+      const userCheck = await supabase.auth.getUser()
+      console.log("USER CHECK:", userCheck)
+
+      // 1. get vendor
+      const { data: vendor, error: vendorError } = await supabase
+        .from('vendors')
+        .select('id')
+        .eq('user_id', user.id)
+        .single()
+
+      if (vendorError) {
+        console.error('VENDOR ERROR:', vendorError)
+        toast.error('Failed to load vendor')
+        return
+      }
+
+      if (!vendor) {
+        toast.error('Vendor not found')
+        return
+      }
+
+      console.log('VENDOR:', vendor)
+
+      setVendorId(vendor.id)
+
+      // 2. get services
+      const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .eq('vendor_id', vendor.id)
+
+      if (error) {
+        console.error('FETCH SERVICES ERROR:', error)
+        toast.error('Failed to fetch services')
+        setLoading(false)
+        return
+      }
+
+      console.log('SERVICES:', data)
+
+      setServices(data || [])
+      setLoading(false)
+    }
+
+    fetchData()
+  }, [user])
 
   const resetForm = () => {
     setFormData({
       name: '',
       description: '',
       price: '',
-      priceType: 'starting',
+      price_type: 'starting',
     })
     setEditingService(null)
   }
 
-  const handleEdit = (service: Service) => {
+  const handleEdit = (service: any) => {
     setEditingService(service)
     setFormData({
       name: service.name,
       description: service.description,
-      price: service.price.toString(),
-      priceType: service.priceType,
+      price: service.price?.toString() || '',
+      price_type: service.price_type || 'starting',
     })
     setIsDialogOpen(true)
   }
 
-  const handleDelete = async (serviceId: string) => {
-    // TODO: Delete from Supabase
-    setServices(prev => prev.filter(s => s.id !== serviceId))
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase.from('services').delete().eq('id', id)
+
+    if (error) {
+      console.error(error)
+      toast.error('Delete failed')
+      return
+    }
+
+    setServices(prev => prev.filter(s => s.id !== id))
     toast.success('Service deleted')
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
 
-    // TODO: Save to Supabase
-    await new Promise(resolve => setTimeout(resolve, 500))
+    if (!vendorId) {
+      toast.error('Vendor not loaded')
+      return
+    }
+
+    const payload = {
+      vendor_id: vendorId,
+      name: formData.name,
+      description: formData.description,
+      price: Number(formData.price),
+      price_type: formData.price_type,
+    }
+
+    console.log('PAYLOAD:', payload)
 
     if (editingService) {
-      setServices(prev => 
-        prev.map(s => 
-          s.id === editingService.id 
-            ? { ...s, ...formData, price: parseInt(formData.price) }
-            : s
-        )
+      const { data, error } = await supabase
+        .from('services')
+        .update(payload)
+        .eq('id', editingService.id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error(error)
+        toast.error('Update failed')
+        return
+      }
+
+      setServices(prev =>
+        prev.map(s => (s.id === editingService.id ? data : s))
       )
+
       toast.success('Service updated')
     } else {
-      const newService: Service = {
-        id: Date.now().toString(),
-        name: formData.name,
-        description: formData.description,
-        price: parseInt(formData.price),
-        priceType: formData.priceType,
+      const { data, error } = await supabase
+        .from('services')
+        .insert(payload)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('INSERT ERROR:', error)
+        toast.error('Failed to add service')
+        return
       }
-      setServices(prev => [...prev, newService])
+
+      setServices(prev => [data, ...prev])
       toast.success('Service added')
     }
 
-    setIsLoading(false)
     setIsDialogOpen(false)
     resetForm()
   }
 
   const formatPrice = (price: number) => {
+    if (!price) return '₹0'
     if (price >= 100000) {
       return `₹${(price / 100000).toFixed(1)} Lakh`
     }
     return `₹${price.toLocaleString()}`
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[70vh]">
+        <Loader2 className="animate-spin h-6 w-6" />
+      </div>
+    )
+  }
+
   return (
     <div className="p-6 lg:p-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        {/* HEADER */}
+        <div className="flex justify-between mb-8">
           <div>
-            <h1 className="font-serif text-3xl font-bold text-foreground">
-              Services & Pricing
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Manage your service offerings and pricing
+            <h1 className="text-3xl font-bold">Services & Pricing</h1>
+            <p className="text-muted-foreground">
+              Manage your offerings
             </p>
           </div>
 
-          <Dialog open={isDialogOpen} onOpenChange={(open) => {
-            setIsDialogOpen(open)
-            if (!open) resetForm()
-          }}>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-primary text-primary-foreground">
-                <Plus className="h-4 w-4 mr-2" />
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
                 Add Service
               </Button>
             </DialogTrigger>
-            <DialogContent>
+
+            <DialogContent className="space-y-4">
               <DialogHeader>
                 <DialogTitle>
-                  {editingService ? 'Edit Service' : 'Add New Service'}
+                  {editingService ? 'Edit Service' : 'Add Service'}
                 </DialogTitle>
                 <DialogDescription>
-                  {editingService 
-                    ? 'Update your service details' 
-                    : 'Add a new service to your profile'}
+                  Add details about your service
                 </DialogDescription>
               </DialogHeader>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                <FieldGroup>
-                  <Field>
-                    <FieldLabel htmlFor="serviceName">Service Name</FieldLabel>
-                    <Input
-                      id="serviceName"
-                      value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="e.g., Wedding Photography"
-                      required
-                    />
-                  </Field>
+                <Input
+                  placeholder="Service Name"
+                  value={formData.name}
+                  onChange={e =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  required
+                />
 
-                  <Field>
-                    <FieldLabel htmlFor="serviceDesc">Description</FieldLabel>
-                    <Textarea
-                      id="serviceDesc"
-                      value={formData.description}
-                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Describe what's included..."
-                      rows={3}
-                      required
-                    />
-                  </Field>
+                <Textarea
+                  placeholder="Description"
+                  value={formData.description}
+                  onChange={e =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  required
+                />
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <Field>
-                      <FieldLabel htmlFor="servicePrice">Price (₹)</FieldLabel>
-                      <Input
-                        id="servicePrice"
-                        type="number"
-                        value={formData.price}
-                        onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                        placeholder="50000"
-                        required
-                      />
-                    </Field>
+                <Input
+                  type="number"
+                  placeholder="Price"
+                  value={formData.price}
+                  onChange={e =>
+                    setFormData({ ...formData, price: e.target.value })
+                  }
+                  required
+                />
 
-                    <Field>
-                      <FieldLabel htmlFor="priceType">Price Type</FieldLabel>
-                      <Select 
-                        value={formData.priceType} 
-                        onValueChange={(v) => setFormData(prev => ({ ...prev, priceType: v as Service['priceType'] }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="starting">Starting From</SelectItem>
-                          <SelectItem value="fixed">Fixed Price</SelectItem>
-                          <SelectItem value="hourly">Per Hour</SelectItem>
-                          <SelectItem value="per-day">Per Day</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </Field>
-                  </div>
-                </FieldGroup>
+                <Select
+                  value={formData.price_type}
+                  onValueChange={v =>
+                    setFormData({ ...formData, price_type: v })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="starting">Starting</SelectItem>
+                    <SelectItem value="fixed">Fixed</SelectItem>
+                    <SelectItem value="hourly">Hourly</SelectItem>
+                    <SelectItem value="per-day">Per Day</SelectItem>
+                  </SelectContent>
+                </Select>
 
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setIsDialogOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    type="submit"
-                    className="bg-primary text-primary-foreground"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      editingService ? 'Update Service' : 'Add Service'
-                    )}
-                  </Button>
-                </div>
+                <Button type="submit" className="w-full">
+                  {editingService ? 'Update' : 'Add'} Service
+                </Button>
               </form>
             </DialogContent>
           </Dialog>
         </div>
 
-        {/* Services Grid */}
-        {services.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {services.map((service, index) => (
-              <motion.div
-                key={service.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Card className="h-full">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="p-2 bg-primary/10 rounded-lg">
-                        <Package className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="flex gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleEdit(service)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => handleDelete(service.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    <CardTitle className="text-lg">{service.name}</CardTitle>
-                    <CardDescription>{service.description}</CardDescription>
+        {/* LIST */}
+        {services.length === 0 ? (
+          <Card className="p-10 text-center flex flex-col items-center">
+            <Package className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+
+            <p className="text-lg font-semibold mb-2">
+              No services yet
+            </p>
+
+            <p className="text-sm text-muted-foreground mb-4">
+              Add your first service to start getting leads 🚀
+            </p>
+
+            <Button onClick={() => setIsDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Service
+            </Button>
+          </Card>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-6">
+            {services
+              .filter((s) => s && s.name)
+              .map((s) => (
+                <Card key={s.id}>
+                  <CardHeader>
+                    <CardTitle>{s.name}</CardTitle>
+                    <CardDescription>{s.description}</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-bold text-primary">
-                        {formatPrice(service.price)}
-                      </span>
-                      <span className="text-sm text-muted-foreground capitalize">
-                        {service.priceType.replace('-', ' ')}
-                      </span>
+
+                  <CardContent className="flex justify-between items-center">
+                    <span className="font-bold text-primary">
+                      {formatPrice(s.price)}
+                    </span>
+
+                    <div className="flex gap-2">
+                      <Button size="icon" onClick={() => handleEdit(s)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" onClick={() => handleDelete(s.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
-              </motion.div>
-            ))}
+              ))}
           </div>
-        ) : (
-          <Card className="p-12 text-center">
-            <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No services added yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Add your first service to start attracting couples
-            </p>
-            <Button onClick={() => setIsDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Your First Service
-            </Button>
-          </Card>
         )}
       </motion.div>
     </div>
