@@ -24,11 +24,7 @@ export function VendorCard({ vendor, index = 0 }: VendorCardProps) {
   const { isFavorite, addFavorite, removeFavorite } = useFavorites()
 
   const handleClick = () => {
-    if (!user) {
-      router.push('/signup')
-    } else {
       router.push(`/vendor/${vendor.id}`)
-    }
   }
 
   const handleFavoriteClick = (e: React.MouseEvent) => {

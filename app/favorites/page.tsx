@@ -7,13 +7,27 @@ import { Footer } from '@/components/footer'
 import { VendorCard } from '@/components/vendor-card'
 import { useAuth } from '@/lib/auth-context'
 import { useFavorites, FavoritesProvider } from '@/lib/favorites-store'
-import { getVendorById } from '@/lib/mock-data'
 import { Vendor } from '@/lib/types'
 import { Heart, Clock, Loader2 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { supabase } from '@/lib/supabase'
+
+const formatVendor = (v: any): Vendor => ({
+  ...v,
+  coverImage: v.cover_image || '/placeholder.jpg',
+  profileImage: v.profile_image || '/placeholder.jpg',
+  gallery: [],
+  services: [],
+  views: 0,
+  favoritesCount: 0,
+  minPrice: v.min_price,
+  maxPrice: v.max_price,
+  isPremium: v.is_premium,
+})
+
 
 function FavoritesContent() {
   const router = useRouter()
@@ -24,26 +38,54 @@ function FavoritesContent() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    if (authLoading) return
-    
-    if (!user) {
-      router.push('/login')
-      return
+    if (!user) return
+
+    const fetchData = async () => {
+      setIsLoading(true)
+
+      // FAVORITES
+      const { data: favs } = await supabase
+        .from('favorites')
+        .select('vendor_id')
+        .eq('user_id', user.id)
+
+      const favIds = favs?.map(f => f.vendor_id) || []
+
+      let favVendors: Vendor[] = []
+      if (favIds.length > 0) {
+        const { data } = await supabase
+          .from('vendors')
+          .select('*')
+          .in('id', favIds)
+
+        favVendors = data?.map(formatVendor) || []
+      }
+
+      // RECENT
+      const { data: rec } = await supabase
+        .from('recently_viewed')
+        .select('vendor_id')
+        .eq('user_id', user.id)
+
+      const recIds = rec?.map(r => r.vendor_id) || []
+
+      let recVendors: Vendor[] = []
+      if (recIds.length > 0) {
+        const { data } = await supabase
+          .from('vendors')
+          .select('*')
+          .in('id', recIds)
+
+        recVendors = data?.map(formatVendor) || []
+      }
+
+      setFavoriteVendors(favVendors)
+      setRecentVendors(recVendors)
+      setIsLoading(false)
     }
 
-    // TODO: Fetch from Supabase
-    const favVendors = favorites
-      .map(id => getVendorById(id))
-      .filter((v): v is Vendor => v !== undefined)
-    
-    const recVendors = recentlyViewed
-      .map(id => getVendorById(id))
-      .filter((v): v is Vendor => v !== undefined)
-
-    setFavoriteVendors(favVendors)
-    setRecentVendors(recVendors)
-    setIsLoading(false)
-  }, [favorites, recentlyViewed, user, authLoading, router])
+    fetchData()
+  }, [user])
 
   if (authLoading || isLoading) {
     return (
@@ -56,7 +98,7 @@ function FavoritesContent() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
-      
+
       <main className="flex-1 pt-24 pb-12">
         <div className="container mx-auto px-4">
           <motion.div
