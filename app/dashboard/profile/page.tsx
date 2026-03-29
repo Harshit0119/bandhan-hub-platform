@@ -564,7 +564,7 @@ export default function ProfileEditPage() {
                 </>
               )}
             </Button>
-            <p>If taking long time to save refresh once.</p>
+            <p>If taking more than 3 minutes to save, refresh once.</p>
           </div>
         </form>
       </motion.div>
