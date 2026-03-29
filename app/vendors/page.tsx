@@ -1,3 +1,4 @@
+// dashboard/vendors/page.tsx
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
@@ -40,24 +41,40 @@ function VendorsContent() {
         setIsLoading(false)
         return
       }
-      const formatted = data.map((v) => ({
-        ...v,
-        coverImage: v.cover_image || '/placeholder.jpg',
-        profileImage: v.profile_image || '/placeholder.jpg',
-        gallery: [],
-        services: [],
-        views: 0,
-        favoritesCount: 0,
-        minPrice: v.min_price,
-        maxPrice: v.max_price,
-        isPremium: v.is_premium,
-        whatsapp: v.whatsapp,
-        instagram: v.instagram,
-        phone: v.phone,
-        experience: v.experience,
-        about: v.about,
-      }))
+      const formatted = await Promise.all(
+        data.map(async (v) => {
+          // ✅ views count
+          const { count: viewsCount } = await supabase
+            .from('profile_views')
+            .select('*', { count: 'exact', head: true })
+            .eq('vendor_id', v.id)
 
+          // ✅ favorites count
+          const { count: favCount } = await supabase
+            .from('favorites')
+            .select('*', { count: 'exact', head: true })
+            .eq('vendor_id', v.id)
+
+          return {
+            ...v,
+            coverImage: v.cover_image || '/placeholder.jpg',
+            profileImage: v.profile_image || '/placeholder.jpg',
+            gallery: [],
+            services: [],
+            views: viewsCount || 0,               // ✅ FIXED
+            favoritesCount: favCount || 0,        // ✅ FIXED
+            minPrice: v.min_price,
+            maxPrice: v.max_price,
+            isPremium: v.is_premium,
+            whatsapp: v.whatsapp,
+            instagram: v.instagram,
+            phone: v.phone,
+            experience: v.experience,
+            about: v.about,
+          }
+        })
+      )
+      
       setVendors(formatted)
       setIsLoading(false)
     }

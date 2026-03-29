@@ -1,3 +1,4 @@
+//app\vendor\[id]\page.tsx
 'use client'
 
 import { useEffect, useState, use } from 'react'
@@ -28,6 +29,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
+import { toast } from 'sonner'
 
 interface VendorProfileContentProps {
   vendor: Vendor
@@ -49,17 +51,31 @@ function VendorProfileContent({ vendor }: VendorProfileContentProps) {
   const [zoom, setZoom] = useState(1)
 
   useEffect(() => {
-    if (vendor?.id) {
-      // Track profile view
-      supabase.from('profile_views').insert({
-        vendor_id: vendor.id
-      })
+    const insertView = async () => {
+      if (!vendor?.id) return
+
+      const key = `viewed_${vendor.id}`
+
+      if (sessionStorage.getItem(key)) return
+
+      const { error } = await supabase
+        .from('profile_views')
+        .insert([{
+          vendor_id: vendor.id,
+        }])
+
+      if (error) {
+        console.error("PROFILE VIEW ERROR:", error)
+      } else {
+        console.log("✅ View inserted")
+        sessionStorage.setItem(key, "true") // ✅ FIXED
+      }
     }
 
-    if (user) {
-      addRecentlyViewed(vendor.id)
-    }
-  }, [vendor?.id, user])
+    insertView()
+
+    addRecentlyViewed(vendor.id)
+  }, [vendor?.id])
 
   const handleFavoriteClick = () => {
     if (!user) {
@@ -200,11 +216,11 @@ function VendorProfileContent({ vendor }: VendorProfileContentProps) {
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Eye className="h-4 w-4" />
-                      <span>{vendor.views.toLocaleString()} views</span>
+                      <span>{(vendor.views || 0).toLocaleString()} views</span>
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Heart className="h-4 w-4" />
-                      <span>{vendor.favoritesCount} favorites</span>
+                      <span>{(vendor.favoritesCount || 0).toLocaleString()} favorites</span>
                     </div>
                   </div>
 
@@ -400,20 +416,34 @@ function VendorProfileContent({ vendor }: VendorProfileContentProps) {
                     <div className="flex gap-3">
                       <Button
                         onClick={async () => {
-                          const { error } = await supabase.from('inquiries').insert({
+                          if (!inquiryData.name || !inquiryData.phone) {
+                            toast.error("Name & Phone are required")
+                            return
+                          }
+                          const { data, error } = await supabase.from('inquiries').insert({
                             vendor_id: vendor.id,
+                            user_id: user?.id || null,
                             name: inquiryData.name,
                             phone: inquiryData.phone,
-                            event_date: inquiryData.event_date,
+                            event_date: inquiryData.event_date || null,
                             message: inquiryData.message,
                           })
 
                           if (error) {
-                            alert('Failed')
+                            console.error("INQUIRY ERROR:", error)
+                            toast.error("Failed to send inquiry")
                             return
                           }
 
-                          alert('Inquiry sent!')
+                          toast.success("Inquiry sent successfully!")
+                          // ✅ reset form
+                          setInquiryData({
+                            name: '',
+                            phone: '',
+                            event_date: '',
+                            message: '',
+                          })
+
                           setShowInquiry(false)
                         }}
                       >
@@ -566,6 +596,11 @@ export default function VendorProfilePage({ params }: { params: Promise<{ id: st
         .select('*')
         .eq('vendor_id', data.id)
 
+      const { count: viewsCount } = await supabase
+        .from('profile_views')
+        .select('*', { count: 'exact', head: true })
+        .eq('vendor_id', data.id)
+
       // 5. Set vendor with gallery
       setVendor({
         ...data,
@@ -573,7 +608,7 @@ export default function VendorProfilePage({ params }: { params: Promise<{ id: st
         profileImage: data.profile_image || '/placeholder.jpg',
         gallery: images?.map((img) => img.image_url) || [],
         services: services || [],
-        views: 0,
+        views: viewsCount || 0,
         favoritesCount: 0,
         minPrice: Number(data.min_price) || 0,
         maxPrice: Number(data.max_price) || 0,
