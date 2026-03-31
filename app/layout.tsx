@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/lib/auth-context'
 import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
+import Script from 'next/script'
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -46,6 +47,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${playfair.variable} ${lato.variable} font-sans antialiased`}>
+        <Script
+        src="https://checkout.razorpay.com/v1/checkout.js" 
+        strategy="beforeInteractive"
+        />  
         <AuthProvider>
           {children}
           <Toaster />

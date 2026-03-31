@@ -4,11 +4,11 @@ import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { mockVendors } from '@/lib/mock-data'
 import { Check, Star, Zap, Crown, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/lib/auth-context'
 
 const plans = [
   {
@@ -36,12 +36,14 @@ const plans = [
   {
     id: 'premium',
     name: 'Premium',
-    price: 999,
+    price: 199,
+    originalPrice: 399,
     period: 'month',
     description: 'Best for growing businesses',
     features: [
       'Everything in Free, plus:',
       'Featured on homepage',
+      "top of search results",
       'Featured badge on profile',
       'Priority in search results',
       'Full analytics dashboard',
@@ -54,36 +56,91 @@ const plans = [
   {
     id: 'annual',
     name: 'Premium Annual',
-    price: 9999,
+    price: 1999,
+    originalPrice: 3999,
     period: 'year',
     description: 'Save 17% with annual billing',
     features: [
+      'Better Analytics',
       'All Premium features',
-      '2 months free',
+      'Featured on top of search results',
       'Priority customer support',
       'Early access to new features',
       'Custom profile branding',
+      'marketing support by us'
     ],
     popular: false,
   },
 ]
 
 export default function SubscriptionPage() {
-  // TODO: Get actual subscription status from Supabase
-  const vendorData = mockVendors[0]
-  const currentPlan = vendorData.isPremium ? 'premium' : 'free'
+  const { user } = useAuth()
+  const currentPlan = user?.isPremium ? 'premium' : 'free'
   const [isLoading, setIsLoading] = useState<string | null>(null)
 
   const handleSubscribe = async (planId: string) => {
-    if (planId === currentPlan) return
-    
+    if (!user) {
+      toast.error("Please log in to subscribe")
+      return
+    }
+
     setIsLoading(planId)
-    
-    // TODO: Integrate Stripe or Polar for payments
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    toast.success('Redirecting to payment...')
-    setIsLoading(null)
+
+    try {
+      // 1. Create order
+      const res = await fetch('/api/razorpay/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: planId }),
+      })
+
+      const order = await res.json()
+
+      // 2. Open Razorpay
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: order.amount,
+        currency: order.currency,
+        name: "Bandhan-Hub",
+        description: planId === 'premium' ? "Monthly Premium Subscription" : "Annual Premium Subscription",
+        image: "https://v0-bandhan-hub-saa-s-platform.vercel.app/bandhan-hublogo.png",
+        order_id: order.id,
+
+        handler: async function (response: any) {
+          // 3. Verify payment
+          await fetch('/api/razorpay/verify-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...response,
+              userId: user.id, // 🔥 IMPORTANT
+              plan: planId,
+            }),
+          })
+
+          toast.success("Payment successful 🎉")
+          window.location.reload()
+        },
+
+        prefill: {
+          name: user?.name,
+          email: user?.email,
+        },
+
+        theme: {
+          color: "#6366f1",
+        },
+      }
+
+      const rzp = new (window as any).Razorpay(options)
+      rzp.open()
+
+    } catch (err) {
+      console.error(err)
+      toast.error("Payment failed")
+    } finally {
+      setIsLoading(null)
+    }
   }
 
   return (
@@ -102,7 +159,7 @@ export default function SubscriptionPage() {
         </div>
 
         {/* Current Plan Banner */}
-        <Card className="mb-8 bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
+        <Card className="mb-8 bg-linear-to-r from-primary/10 to-accent/10 border-primary/20">
           <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-primary/20 rounded-full">
@@ -117,8 +174,8 @@ export default function SubscriptionPage() {
                   Current Plan: {currentPlan === 'premium' ? 'Premium' : 'Free'}
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  {currentPlan === 'premium' 
-                    ? 'You have access to all premium features' 
+                  {currentPlan === 'premium'
+                    ? 'You have access to all premium features'
                     : 'Upgrade to unlock more features'}
                 </p>
               </div>
@@ -152,23 +209,38 @@ export default function SubscriptionPage() {
                     </Badge>
                   </div>
                 )}
-                
+
                 <CardHeader className="text-center pb-4">
                   <CardTitle className="text-xl">{plan.name}</CardTitle>
                   <CardDescription>{plan.description}</CardDescription>
-                  <div className="mt-4">
+                  <div className="mt-4 relative inline-block">
+                    {plan.originalPrice && (
+                      <span className="relative inline-block text-2xl font-semibold text-gray-500 mr-2">
+                        ₹{plan.originalPrice.toLocaleString()}
+                        <span className="absolute inset-0 flex items-center justify-center">
+                          <span className="w-full h-0.5 bg-red-500 rotate-12"></span>
+                        </span>
+                      </span>
+                    )}
                     <span className="text-4xl font-bold text-foreground">
                       ₹{plan.price.toLocaleString()}
                     </span>
                     <span className="text-muted-foreground">/{plan.period}</span>
                   </div>
+                  {(plan.id === "premium" || plan.id === "annual") && (
+                    <div className="=flex justify-center mt-2">
+                    <Badge className="bg-green-500 text-white mt-2 h-10">
+                      <p className="text-sm font-semibold">🎉 Launch Offer Save 50% </p> 
+                    </Badge>
+                    </div>
+                  )}
                 </CardHeader>
 
                 <CardContent className="space-y-6">
                   <ul className="space-y-3">
                     {plan.features.map((feature) => (
                       <li key={feature} className="flex items-start gap-2">
-                        <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                        <Check className="h-5 w-5 text-green-500 flex-0 mt-0.5" />
                         <span className="text-sm text-foreground">{feature}</span>
                       </li>
                     ))}
@@ -178,7 +250,7 @@ export default function SubscriptionPage() {
                     <ul className="space-y-3 opacity-50">
                       {plan.notIncluded.map((feature) => (
                         <li key={feature} className="flex items-start gap-2">
-                          <Check className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                          <Check className="h-5 w-5 text-muted-foreground flex-0 mt-0.5" />
                           <span className="text-sm text-muted-foreground line-through">
                             {feature}
                           </span>
@@ -190,8 +262,8 @@ export default function SubscriptionPage() {
                   <Button
                     className={cn(
                       "w-full",
-                      plan.popular 
-                        ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                      plan.popular
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90"
                         : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                     )}
                     disabled={plan.id === currentPlan || isLoading !== null}
@@ -248,12 +320,6 @@ export default function SubscriptionPage() {
             </div>
           </CardContent>
         </Card>
-
-        {/* TODO Notice */}
-        <p className="text-center text-sm text-muted-foreground mt-8">
-          {/* TODO: integrate Stripe or Polar for payments */}
-          Payment integration coming soon. Contact support for manual upgrades.
-        </p>
       </motion.div>
     </div>
   )
