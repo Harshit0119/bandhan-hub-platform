@@ -48,7 +48,6 @@ export async function POST(req: Request) {
       expiresAt.setMonth(expiresAt.getMonth() + 1)
     }
 
-    
     // ✅ UPDATE vendor
     const { data, error } = await supabase
       .from('vendors')
