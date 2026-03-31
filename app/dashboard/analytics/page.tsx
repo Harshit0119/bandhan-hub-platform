@@ -1,3 +1,4 @@
+//app\dashboard\analytics\page.tsx
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -17,9 +18,11 @@ import {
   MessageSquare,
   TrendingUp,
   Calendar,
+  Lock
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Loader2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export default function AnalyticsPage() {
   const { user, isLoading } = useAuth()
@@ -34,77 +37,68 @@ export default function AnalyticsPage() {
   const [weeklyViews, setWeeklyViews] = useState<
     { day: string; views: number }[]
   >([])
+
   const [loading, setLoading] = useState(true)
 
+  const isPremium = user?.isPremium
+
   useEffect(() => {
-    if (!user?.vendorId) return
+    if (!user?.id) return
 
     const fetchAnalytics = async () => {
       setLoading(true)
 
-      const vendorId = user.vendorId
+      // ✅ get vendorId
+      const { data: vendorData } = await supabase
+        .from('vendors')
+        .select('id')
+        .eq('user_id', user.id)
+        .single()
 
-      // 🔹 TOTAL COUNTS
-      const { count: views } = await supabase
-        .from('profile_views')
-        .select('*', { count: 'exact', head: true })
-        .eq('vendor_id', vendorId)
+      if (!vendorData) {
+        setLoading(false)
+        return
+      }
 
-      const { count: favorites } = await supabase
-        .from('favorites')
-        .select('*', { count: 'exact', head: true })
-        .eq('vendor_id', vendorId)
+      const vendorId = vendorData.id
 
-      const { count: contacts } = await supabase
-        .from('contact_clicks')
-        .select('*', { count: 'exact', head: true })
-        .eq('vendor_id', vendorId)
-
-      const { count: inquiries } = await supabase
-        .from('inquiries')
-        .select('*', { count: 'exact', head: true })
-        .eq('vendor_id', vendorId)
-
-      // 🔹 WEEKLY VIEWS
-      const { data: viewsData } = await supabase
-        .from('profile_views')
-        .select('viewed_at')
-        .eq('vendor_id', vendorId)
-
-      const last7Days = Array.from({ length: 7 }).map((_, i) => {
-        const date = new Date()
-        date.setDate(date.getDate() - i)
-        return date.toISOString().split('T')[0]
-      }).reverse()
-
-      const grouped = last7Days.map((date) => {
-        const count =
-          viewsData?.filter((v) =>
-            v.viewed_at.startsWith(date)
-          ).length || 0
-
-        return {
-          day: new Date(date).toLocaleDateString('en-US', {
-            weekday: 'short',
-          }),
-          views: count,
-        }
-      })
-
-      setWeeklyViews(grouped)
+      // ✅ counts
+      const [viewsRes, favRes, contactRes, inquiryRes] = await Promise.all([
+        supabase.from('profile_views').select('*', { count: 'exact', head: true }).eq('vendor_id', vendorId),
+        supabase.from('favorites').select('*', { count: 'exact', head: true }).eq('vendor_id', vendorId),
+        supabase.from('contact_clicks').select('*', { count: 'exact', head: true }).eq('vendor_id', vendorId),
+        supabase.from('inquiries').select('*', { count: 'exact', head: true }).eq('vendor_id', vendorId),
+      ])
 
       setStats({
-        views: views || 0,
-        favorites: favorites || 0,
-        contacts: contacts || 0,
-        inquiries: inquiries || 0,
+        views: viewsRes.count || 0,
+        favorites: favRes.count || 0,
+        contacts: contactRes.count || 0,
+        inquiries: inquiryRes.count || 0,
       })
+
+      // ✅ RPC for graph (ONLY if premium)
+      if (isPremium) {
+        const { data } = await supabase.rpc('get_views_by_day', {
+          vendor_id_input: vendorId,
+        })
+
+        const formatted =
+          data?.slice(-7).map((d: any) => ({
+            day: new Date(d.day).toLocaleDateString('en-US', {
+              weekday: 'short',
+            }),
+            views: d.views,
+          })) || []
+
+        setWeeklyViews(formatted)
+      }
 
       setLoading(false)
     }
 
     fetchAnalytics()
-  }, [user])
+  }, [user, isPremium])
 
   if (isLoading || loading) {
     return (
@@ -114,22 +108,29 @@ export default function AnalyticsPage() {
     )
   }
 
-  const maxViews = Math.max(...weeklyViews.map((d) => d.views), 1)
+  const safeWeekly = weeklyViews.length
+    ? weeklyViews
+    : [
+      { day: 'Mon', views: 0 },
+      { day: 'Tue', views: 0 },
+      { day: 'Wed', views: 0 },
+      { day: 'Thu', views: 0 },
+      { day: 'Fri', views: 0 },
+      { day: 'Sat', views: 0 },
+      { day: 'Sun', views: 0 },
+    ]
 
-  // 🔥 NEW: Conversion Rate
+  const maxViews = Math.max(...safeWeekly.map((d) => d.views), 1)
+
   const conversionRate =
     stats.views > 0
       ? ((stats.contacts / stats.views) * 100).toFixed(1)
-      : 0
-
-  const totalWeekly = weeklyViews.reduce((sum, d) => sum + d.views, 0)
-  const peakDay = weeklyViews.reduce((prev, curr) =>
-    curr.views > prev.views ? curr : prev,
-    weeklyViews[0] || { day: '', views: 0 }
-  )
+      : '0'
 
   return (
     <div className="p-6 lg:p-8 space-y-8">
+
+      {/* HEADER */}
       <div>
         <h1 className="text-3xl font-bold">Analytics</h1>
         <p className="text-muted-foreground">
@@ -137,7 +138,7 @@ export default function AnalyticsPage() {
         </p>
       </div>
 
-      {/* 🔥 STATS */}
+      {/* STATS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         {[
           { label: 'Views', value: stats.views, icon: Eye },
@@ -147,36 +148,38 @@ export default function AnalyticsPage() {
         ].map((stat, i) => {
           const Icon = stat.icon
           return (
-            <motion.div key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex justify-between mb-2">
-                    <Icon className="text-primary" />
-                    <span className="text-sm text-muted-foreground">
-                      {stat.label}
-                    </span>
-                  </div>
-                  <div className="text-3xl font-bold">{stat.value}</div>
-                </CardContent>
-              </Card>
-            </motion.div>
+            <Card key={i}>
+              <CardContent className="p-6 flex justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">{stat.label}</p>
+                  <p className="text-3xl font-bold">{stat.value}</p>
+                </div>
+                <Icon className="text-primary" />
+              </CardContent>
+            </Card>
           )
         })}
       </div>
 
-      {/* 🔥 CONVERSION */}
-      <Card>
+      {/* CONVERSION (PREMIUM LOCK) */}
+      <Card className="relative">
+        {!isPremium && (
+          <div className="absolute inset-0 backdrop-blur-md flex items-center justify-center z-10">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Lock className="h-4 w-4" />
+              Premium Feature
+            </div>
+          </div>
+        )}
+
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
             Conversion Rate
           </CardTitle>
-          <CardDescription>
-            How many visitors contact you
-          </CardDescription>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className={cn(!isPremium && "blur-sm")}>
           <div className="text-4xl font-bold text-primary">
             {conversionRate}%
           </div>
@@ -186,19 +189,27 @@ export default function AnalyticsPage() {
         </CardContent>
       </Card>
 
-      {/* 📊 WEEKLY GRAPH */}
-      <Card>
+      {/* GRAPH (PREMIUM LOCK) */}
+      <Card className="relative">
+        {!isPremium && (
+          <div className="absolute inset-0 backdrop-blur-md flex items-center justify-center z-10">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Lock className="h-4 w-4" />
+              Upgrade to see trends
+            </div>
+          </div>
+        )}
+
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
             Weekly Views
           </CardTitle>
-          <CardDescription>Last 7 days performance</CardDescription>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className={cn(!isPremium && "blur-sm")}>
           <div className="flex items-end gap-3 h-48">
-            {weeklyViews.map((d, i) => (
+            {safeWeekly.map((d, i) => (
               <div key={i} className="flex-1 flex flex-col items-center gap-2">
                 <motion.div
                   initial={{ height: 0 }}
@@ -209,65 +220,38 @@ export default function AnalyticsPage() {
               </div>
             ))}
           </div>
-
-          <div className="mt-4 flex justify-between text-sm text-muted-foreground">
-            <span>Total: {totalWeekly} views</span>
-            <span>
-              Peak: {peakDay?.day} ({peakDay?.views})
-            </span>
-          </div>
-        </CardContent>
-
-        <CardTitle className="gap-2 ml-6">Summary</CardTitle>
-        <CardContent className="grid md:grid-cols-3 gap-4">
-
-          <div className="p-4 bg-blue-50 rounded">
-            <p className="text-sm text-muted-foreground">Total Weekly Views</p>
-            <p className="text-xl font-bold">{totalWeekly}</p>
-          </div>
-
-          <div className="p-4 bg-green-50 rounded">
-            <p className="text-sm text-muted-foreground">Best Day</p>
-            <p className="text-xl font-bold">{peakDay.day}</p>
-          </div>
-
-          <div className="p-4 bg-purple-50 rounded">
-            <p className="text-sm text-muted-foreground">Conversion Rate</p>
-            <p className="text-xl font-bold">{conversionRate}%</p>
-          </div>
         </CardContent>
       </Card>
 
-
-      {/* 💡 SMART INSIGHTS */}
+      {/* INSIGHTS */}
       <Card>
         <CardHeader>
-          <CardTitle>AI Insights</CardTitle>
+          <CardTitle>Insights</CardTitle>
         </CardHeader>
 
         <CardContent className="grid md:grid-cols-3 gap-4">
-
           <div className="p-4 bg-green-50 rounded">
-            <p className="font-semibold text-green-600">Strong Performance</p>
+            <p className="font-semibold text-green-600">Performance</p>
             <p className="text-sm">
-              Your profile is converting well. Keep sharing your link 🔥
+              {stats.views > 50
+                ? 'Great traction 🚀'
+                : 'Keep sharing your profile'}
             </p>
           </div>
 
           <div className="p-4 bg-yellow-50 rounded">
-            <p className="font-semibold text-yellow-600">Growth Tip</p>
+            <p className="font-semibold text-yellow-600">Tip</p>
             <p className="text-sm">
-              Vendors with 5+ images get 2x more inquiries
+              Add more images to increase trust
             </p>
           </div>
 
           <div className="p-4 bg-blue-50 rounded">
             <p className="font-semibold text-blue-600">Action</p>
             <p className="text-sm">
-              Share your profile on WhatsApp groups to boost traffic 🚀
+              Share your profile on WhatsApp groups
             </p>
           </div>
-
         </CardContent>
       </Card>
     </div>

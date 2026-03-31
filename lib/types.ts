@@ -3,6 +3,7 @@
 export interface Vendor {
   id: string
   name: string
+  slug?: string
   category: VendorCategory
   city: string
   profileImage: string

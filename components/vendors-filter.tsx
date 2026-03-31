@@ -1,3 +1,4 @@
+// \components\vendors-filter.tsx
 'use client'
 
 import { useState } from 'react'
@@ -67,7 +68,8 @@ export function VendorsFilter({
     <FieldGroup className="gap-4">
       <Field>
         <FieldLabel>Category</FieldLabel>
-        <Select value={category} onValueChange={setCategory}>
+        {/* <Select value={category} onValueChange={setCategory}> */}
+        <Select value={category} onValueChange={(v)=> setCategory(v === 'all' ? '' : v)}>
           <SelectTrigger className="bg-card">
             <SelectValue placeholder="All categories" />
           </SelectTrigger>

@@ -2,7 +2,6 @@
 'use client'
 
 import Image from 'next/image'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Heart, Eye, MapPin, Star } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
@@ -25,7 +24,7 @@ export function VendorCard({ vendor, index = 0 }: VendorCardProps) {
   const { isFavorite, addFavorite, removeFavorite } = useFavorites()
 
   const handleClick = () => {
-      router.push(`/vendor/${vendor.id}`)
+    router.push(`/vendor/${vendor.slug || vendor.id}`)
   }
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
@@ -55,7 +54,7 @@ export function VendorCard({ vendor, index = 0 }: VendorCardProps) {
       viewport={{ once: true }}
       transition={{ delay: index * 0.1 }}
     >
-      <Card 
+      <Card
         className="group overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 border-border bg-card"
         onClick={handleClick}
       >
@@ -63,7 +62,7 @@ export function VendorCard({ vendor, index = 0 }: VendorCardProps) {
           <Image
             src={vendor.profileImage}
             alt={vendor.name}
-            fill
+            fill sizes ="(max-width: 768px) 100vw, 25vw"
             className="object-cover transition-transform duration-500 group-hover:scale-110"
           />
 
@@ -91,10 +90,17 @@ export function VendorCard({ vendor, index = 0 }: VendorCardProps) {
             <Heart className={cn("h-5 w-5", isFavorite(vendor.id) && "fill-current")} />
           </Button>
 
-          {/* Views */}
-          <div className="absolute bottom-3 left-3 flex items-center gap-1 text-white text-sm">
-            <Eye className="h-4 w-4" />
-            <span>{vendor.views.toLocaleString()}</span>
+          {/* Views + Favorites */}
+          <div className="absolute bottom-3 left-3 flex items-center gap-3 text-white text-sm">
+            <div className="flex items-center gap-1">
+              <Eye className="h-4 w-4" />
+              <span>{(vendor.views || 0).toLocaleString()}</span>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <Heart className="h-4 w-4" />
+              <span>{(vendor.favoritesCount || 0).toLocaleString()}</span>
+            </div>
           </div>
 
           {/* Price */}

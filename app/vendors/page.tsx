@@ -1,4 +1,5 @@
-// dashboard/vendors/page.tsx
+// /vendors/page.tsx
+// /vendors/page.tsx
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
@@ -27,6 +28,7 @@ function VendorsContent() {
     const fetchVendors = async () => {
       setIsLoading(true)
 
+      // ✅ STEP 1: Fetch vendors
       let query = supabase.from('vendors').select('*')
 
       if (category) query = query.eq('category', category)
@@ -36,45 +38,68 @@ function VendorsContent() {
 
       const { data, error } = await query
 
-      if (error) {
+      if (error || !data) {
         console.error("Error fetching vendors:", error)
         setIsLoading(false)
         return
       }
-      const formatted = await Promise.all(
-        data.map(async (v) => {
-          // ✅ views count
-          const { count: viewsCount } = await supabase
-            .from('profile_views')
-            .select('*', { count: 'exact', head: true })
-            .eq('vendor_id', v.id)
 
-          // ✅ favorites count
-          const { count: favCount } = await supabase
-            .from('favorites')
-            .select('*', { count: 'exact', head: true })
-            .eq('vendor_id', v.id)
+      if (data.length === 0) {
+        setVendors([])
+        setIsLoading(false)
+        return
+      }
 
-          return {
-            ...v,
-            coverImage: v.cover_image || '/placeholder.jpg',
-            profileImage: v.profile_image || '/placeholder.jpg',
-            gallery: [],
-            services: [],
-            views: viewsCount || 0,               // ✅ FIXED
-            favoritesCount: favCount || 0,        // ✅ FIXED
-            minPrice: v.min_price,
-            maxPrice: v.max_price,
-            isPremium: v.is_premium,
-            whatsapp: v.whatsapp,
-            instagram: v.instagram,
-            phone: v.phone,
-            experience: v.experience,
-            about: v.about,
-          }
-        })
-      )
-      
+      const vendorIds = data.map(v => v.id)
+
+      // ✅ STEP 2: Fetch counts ONLY for these vendors
+      const [
+        { data: viewsData },
+        { data: favData }
+      ] = await Promise.all([
+        supabase
+          .from('profile_views')
+          .select('vendor_id')
+          .in('vendor_id', vendorIds),
+
+        supabase
+          .from('favorites')
+          .select('vendor_id')
+          .in('vendor_id', vendorIds),
+      ])
+
+      // ✅ STEP 3: Build maps
+      const viewsMap: Record<string, number> = {}
+      viewsData?.forEach(v => {
+        viewsMap[v.vendor_id] = (viewsMap[v.vendor_id] || 0) + 1
+      })
+
+      const favMap: Record<string, number> = {}
+      favData?.forEach(f => {
+        favMap[f.vendor_id] = (favMap[f.vendor_id] || 0) + 1
+      })
+
+      // ✅ STEP 4: Format
+      const formatted = data.map((v) => ({
+        ...v,
+        coverImage: v.cover_image || '/placeholder.jpg',
+        profileImage: v.profile_image || '/placeholder.jpg',
+        gallery: [],
+        services: [],
+
+        views: viewsMap[v.id] || 0,
+        favoritesCount: favMap[v.id] || 0,
+
+        minPrice: v.min_price,
+        maxPrice: v.max_price,
+        isPremium: v.is_premium,
+        whatsapp: v.whatsapp,
+        instagram: v.instagram,
+        phone: v.phone,
+        experience: v.experience,
+        about: v.about,
+      }))
+
       setVendors(formatted)
       setIsLoading(false)
     }
@@ -87,25 +112,20 @@ function VendorsContent() {
       <div className="min-h-screen flex flex-col bg-background">
         <Navbar />
         <main className="flex-1 pt-24">
-          {/* Header */}
+
           <section className="bg-linear-to-br from-primary to-primary/80 text-white py-12">
-            <div className="container mx-auto px-4">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-center"
-              >
-                <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+            <div className="container mx-auto px-4 text-center">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <h1 className="font-serif text-4xl font-bold mb-4">
                   {category ? `${category}s` : 'All Vendors'}
                 </h1>
-                <p className="text-white/80 max-w-2xl mx-auto">
-                  {city ? `Browse vendors in ${city}` : 'Discover talented wedding professionals across India'}
+                <p className="text-white/80">
+                  {city ? `Browse vendors in ${city}` : 'Discover talented wedding professionals'}
                 </p>
               </motion.div>
             </div>
           </section>
 
-          {/* Filters & Results */}
           <section className="container mx-auto px-4 py-8">
             <VendorsFilter
               initialCategory={category}
@@ -115,33 +135,23 @@ function VendorsContent() {
             />
 
             {isLoading ? (
-              <div className="flex justify-center items-center py-20">
+              <div className="flex justify-center py-20">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : vendors.length > 0 ? (
-              <>
-                <p className="text-muted-foreground mb-6">
-                  Showing {vendors.length} vendor{vendors.length !== 1 ? 's' : ''}
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {vendors.map((vendor, index) => (
-                    <VendorCard key={vendor.id} vendor={vendor} index={index} />
-                  ))}
-                </div>
-              </>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {vendors.map((vendor, index) => (
+                  <VendorCard key={vendor.id} vendor={vendor} index={index} />
+                ))}
+              </div>
             ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center py-20"
-              >
-                <h3 className="text-xl font-semibold text-foreground mb-2">No vendors found</h3>
-                <p className="text-muted-foreground">Try adjusting your filters to see more results.</p>
-              </motion.div>
+              <div className="text-center py-20">
+                <h3 className="text-xl font-semibold">No vendors found</h3>
+              </div>
             )}
           </section>
-        </main>
 
+        </main>
         <Footer />
       </div>
     </FavoritesProvider>

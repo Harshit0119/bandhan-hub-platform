@@ -9,10 +9,15 @@ import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { supabase } from '@/lib/supabase'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/lib/auth-context'
 import { useFavorites, FavoritesProvider } from '@/lib/favorites-store'
-import { supabase } from '@/lib/supabase'
+import {
+  insertProfileView,
+  insertContactClick,
+  insertInquiry,
+} from '@/lib/db-actions'
 import { Vendor } from '@/lib/types'
 import {
   Heart,
@@ -33,9 +38,10 @@ import { toast } from 'sonner'
 
 interface VendorProfileContentProps {
   vendor: Vendor
+  setVendor: (vendor: Vendor | null | ((prev: Vendor | null) => Vendor | null)) => void
 }
 
-function VendorProfileContent({ vendor }: VendorProfileContentProps) {
+function VendorProfileContent({ vendor, setVendor }: VendorProfileContentProps) {
   const router = useRouter()
   const { user } = useAuth()
   const [showInquiry, setShowInquiry] = useState(false)
@@ -51,33 +57,20 @@ function VendorProfileContent({ vendor }: VendorProfileContentProps) {
   const [zoom, setZoom] = useState(1)
 
   useEffect(() => {
-    const insertView = async () => {
-      if (!vendor?.id) return
+    if (!vendor?.id) return
 
-      const key = `viewed_${vendor.id}`
+    const key = `viewed_${vendor.id}`
 
-      if (sessionStorage.getItem(key)) return
+    if (sessionStorage.getItem(key)) return
 
-      const { error } = await supabase
-        .from('profile_views')
-        .insert([{
-          vendor_id: vendor.id,
-        }])
+    insertProfileView(vendor.id)
 
-      if (error) {
-        console.error("PROFILE VIEW ERROR:", error)
-      } else {
-        console.log("✅ View inserted")
-        sessionStorage.setItem(key, "true") // ✅ FIXED
-      }
-    }
-
-    insertView()
+    sessionStorage.setItem(key, 'true')
 
     addRecentlyViewed(vendor.id)
   }, [vendor?.id])
 
-  const handleFavoriteClick = () => {
+  const handleFavoriteClick = async () => {
     if (!user) {
       router.push('/signup')
       return
@@ -87,6 +80,13 @@ function VendorProfileContent({ vendor }: VendorProfileContentProps) {
     } else {
       addFavorite(vendor.id)
     }
+    // ✅ re-fetch favorites count
+    setVendor((prev: any) => ({
+      ...prev,
+      favoritesCount: isFavorite(vendor.id)
+        ? (prev.favoritesCount || 1) - 1
+        : (prev.favoritesCount || 0) + 1
+    }))
   }
 
   const handleContactClick = async (type: 'whatsapp' | 'instagram' | 'phone') => {
@@ -94,11 +94,11 @@ function VendorProfileContent({ vendor }: VendorProfileContentProps) {
       router.push('/signup')
       return
     }
-    await supabase.from('contact_clicks').insert({
-      vendor_id: vendor.id
-    })
+
+    insertContactClick(vendor.id) // ✅ FIXED
 
     let url = ''
+
     switch (type) {
       case 'whatsapp':
         url = `https://wa.me/${vendor.whatsapp?.replace(/\D/g, '')}`
@@ -420,31 +420,34 @@ function VendorProfileContent({ vendor }: VendorProfileContentProps) {
                             toast.error("Name & Phone are required")
                             return
                           }
-                          const { data, error } = await supabase.from('inquiries').insert({
-                            vendor_id: vendor.id,
-                            user_id: user?.id || null,
-                            name: inquiryData.name,
-                            phone: inquiryData.phone,
-                            event_date: inquiryData.event_date || null,
-                            message: inquiryData.message,
-                          })
 
-                          if (error) {
-                            console.error("INQUIRY ERROR:", error)
+                          try {
+                            console.log("Sending inquiry...", inquiryData)
+
+                            await insertInquiry({
+                              vendorId: vendor.id,
+                              userId: user?.id || null,
+                              name: inquiryData.name,
+                              phone: inquiryData.phone,
+                              event_date: inquiryData.event_date || null,
+                              message: inquiryData.message,
+                            })
+
+                            toast.success("Inquiry sent successfully!")
+
+                            setInquiryData({
+                              name: '',
+                              phone: '',
+                              event_date: '',
+                              message: '',
+                            })
+
+                            setShowInquiry(false)
+
+                          } catch (err) {
+                            console.error(err)
                             toast.error("Failed to send inquiry")
-                            return
                           }
-
-                          toast.success("Inquiry sent successfully!")
-                          // ✅ reset form
-                          setInquiryData({
-                            name: '',
-                            phone: '',
-                            event_date: '',
-                            message: '',
-                          })
-
-                          setShowInquiry(false)
                         }}
                       >
                         Submit
@@ -558,72 +561,81 @@ export default function VendorProfilePage({ params }: { params: Promise<{ id: st
     const fetchVendor = async () => {
       setIsLoading(true)
 
-      // 1. Get vendor
-      let { data, error } = await supabase
-        .from('vendors')
-        .select('*')
-        .eq('slug', resolvedParams.id)
-        .maybeSingle()
-
-      // 🔹 2. If NOT found → fallback to ID
-      if (!data) {
-        const res = await supabase
+      try {
+        // ✅ Get vendor (slug OR id)
+        let { data } = await supabase
           .from('vendors')
           .select('*')
-          .eq('id', resolvedParams.id)
+          .eq('slug', resolvedParams.id)
           .maybeSingle()
 
-        data = res.data
-        error = res.error
-      }
+        if (!data) {
+          const res = await supabase
+            .from('vendors')
+            .select('*')
+            .eq('id', resolvedParams.id)
+            .maybeSingle()
 
-      // 🔹 3. Handle final error
-      if (!data) {
-        console.error("Vendor not found")
+          data = res.data
+        }
+
+        if (!data) {
+          setVendor(null)
+          return
+        }
+
+        const vendorId = data.id
+
+        // ✅ PARALLEL FETCH (FAST ⚡)
+        const [
+          { data: images },
+          { data: services },
+          { count: viewsCount },
+          { count: favCount },
+        ] = await Promise.all([
+          supabase
+            .from('vendor_images')
+            .select('image_url')
+            .eq('vendor_id', vendorId),
+
+          supabase
+            .from('services')
+            .select('*')
+            .eq('vendor_id', vendorId),
+
+          supabase
+            .from('profile_views')
+            .select('*', { count: 'exact', head: true })
+            .eq('vendor_id', vendorId),
+
+          supabase
+            .from('favorites')
+            .select('*', { count: 'exact', head: true })
+            .eq('vendor_id', vendorId),
+        ])
+
+        setVendor({
+          ...data,
+          coverImage: data.cover_image || '/placeholder.jpg',
+          profileImage: data.profile_image || '/placeholder.jpg',
+          gallery: images?.map((img) => img.image_url) || [],
+          services: services || [],
+          views: viewsCount || 0,
+          favoritesCount: favCount || 0,
+          minPrice: Number(data.min_price) || 0,
+          maxPrice: Number(data.max_price) || 0,
+          isPremium: data.is_premium,
+        })
+
+      } catch (err) {
+        console.error(err)
+      } finally {
         setIsLoading(false)
-        return
       }
-
-      // 4. Get gallery images
-      const { data: images } = await supabase
-        .from('vendor_images')
-        .select('image_url')
-        .eq('vendor_id', data.id)
-
-      // Fetch services
-      const { data: services } = await supabase
-        .from('services')
-        .select('*')
-        .eq('vendor_id', data.id)
-
-      const { count: viewsCount } = await supabase
-        .from('profile_views')
-        .select('*', { count: 'exact', head: true })
-        .eq('vendor_id', data.id)
-
-      // 5. Set vendor with gallery
-      setVendor({
-        ...data,
-        coverImage: data.cover_image || '/placeholder.jpg',
-        profileImage: data.profile_image || '/placeholder.jpg',
-        gallery: images?.map((img) => img.image_url) || [],
-        services: services || [],
-        views: viewsCount || 0,
-        favoritesCount: 0,
-        minPrice: Number(data.min_price) || 0,
-        maxPrice: Number(data.max_price) || 0,
-        isPremium: data.is_premium,
-        whatsapp: data.whatsapp,
-        instagram: data.instagram,
-        phone: data.phone,
-        experience: data.experience,
-        about: data.about,
-      })
-
-      setIsLoading(false)
     }
+
     fetchVendor()
-  }, [resolvedParams.id, user, authLoading, router])
+  }, [resolvedParams.id, authLoading])
 
   if (authLoading || isLoading) {
     return (
@@ -646,11 +658,8 @@ export default function VendorProfilePage({ params }: { params: Promise<{ id: st
 
   return (
     <FavoritesProvider>
-      <VendorProfileContent vendor={vendor} />
+      <VendorProfileContent vendor={vendor} setVendor={setVendor} />
     </FavoritesProvider>
   )
 }
-// function setVendor(arg0: any) {
-//   throw new Error('Function not implemented.')
-// }
 

@@ -1,17 +1,34 @@
+// dashboard/page.tsx
+// dashboard/page.tsx
 'use client'
 
 import { useAuth } from '@/lib/auth-context'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Eye, Heart, MousePointer, TrendingUp, Star, ArrowRight, Loader2 } from 'lucide-react'
+import {
+  Eye,
+  Heart,
+  MousePointer,
+  TrendingUp,
+  Star,
+  ArrowRight,
+  Loader2,
+  Clock
+} from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import Image from 'next/image'
-import { Clock } from 'lucide-react'
 import { RecentLeads } from '@/components/recent-leads'
+import { getVendorIdByUserId } from '@/lib/db-actions'
+import Image from 'next/image'
 
 export default function DashboardPage() {
   const { user } = useAuth()
@@ -24,67 +41,75 @@ export default function DashboardPage() {
   })
 
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [vendorId, setVendorId] = useState<string | null>(null)
   const [recentVendors, setRecentVendors] = useState<any[]>([])
 
   useEffect(() => {
-    if (!user?.vendorId) return
+    if (!user?.id) return
 
     const fetchDashboardData = async () => {
       try {
         setLoading(true)
 
-        const vendorId = user.vendorId
+        // ✅ CENTRALIZED (BEST PRACTICE)
+        const vId = await getVendorIdByUserId(user.id)
 
+        if (!vId) {
+          setLoading(false)
+          return
+        }
+
+        setVendorId(vId)
+
+        // ✅ PARALLEL QUERIES (FAST)
         const [
-          { count: views },
-          { count: favorites },
-          { count: contacts },
-          { count: inquiries },
+          viewsRes,
+          favRes,
+          contactRes,
+          inquiryRes,
         ] = await Promise.all([
           supabase
             .from('profile_views')
             .select('*', { count: 'exact', head: true })
-            .eq('vendor_id', vendorId),
+            .eq('vendor_id', vId),
 
           supabase
             .from('favorites')
             .select('*', { count: 'exact', head: true })
-            .eq('vendor_id', vendorId),
+            .eq('vendor_id', vId),
 
           supabase
             .from('contact_clicks')
             .select('*', { count: 'exact', head: true })
-            .eq('vendor_id', vendorId),
+            .eq('vendor_id', vId),
 
           supabase
             .from('inquiries')
             .select('*', { count: 'exact', head: true })
-            .eq('vendor_id', vendorId),
+            .eq('vendor_id', vId),
         ])
 
         setStats({
-          views: views || 0,
-          favorites: favorites || 0,
-          contacts: contacts || 0,
-          inquiries: inquiries || 0,
+          views: viewsRes.count || 0,
+          favorites: favRes.count || 0,
+          contacts: contactRes.count || 0,
+          inquiries: inquiryRes.count || 0,
         })
 
-        // Fetch recently viewed vendors for non-vendors
+        // Fetch recently viewed vendors for couples
         if (!user?.isVendor) {
           const { data } = await supabase
             .from('recently_viewed')
-            .select('vendor_id, vendors(*)')
+            .select('vendor:vendor_id(*)')
             .eq('user_id', user?.id)
-            .order('viewed_at', { ascending: false })
+            .order('created_at', { ascending: false })
             .limit(5)
 
-          const vendors = data?.map((item: any) => item.vendors).filter(Boolean) || []
-          setRecentVendors(vendors)
+          setRecentVendors(data?.map(item => item.vendor).filter(Boolean) || [])
         }
+
       } catch (err) {
-        console.error(err)
-        setError('Failed to load dashboard data')
+        console.error('Dashboard Error:', err)
       } finally {
         setLoading(false)
       }
@@ -93,7 +118,7 @@ export default function DashboardPage() {
     fetchDashboardData()
   }, [user])
 
-  // 🔹 LOADING STATE
+  // ✅ LOADING
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -102,17 +127,8 @@ export default function DashboardPage() {
     )
   }
 
-  // 🔹 ERROR STATE
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-red-500">{error}</p>
-      </div>
-    )
-  }
-
-  // 🔹 SAFETY
-  if (!user?.vendorId) {
+  // ✅ NO VENDOR CASE
+  if (!vendorId) {
     return (
       <div className="p-6">
         <p>No vendor profile found.</p>
@@ -151,7 +167,7 @@ export default function DashboardPage() {
     <div className="p-6 lg:p-8">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
 
-        {/* 🔥 HEADER */}
+        {/* HEADER */}
         <div className="mb-8">
           <h1 className="font-serif text-3xl font-bold text-foreground">
             Welcome back, {user?.name}!
@@ -161,9 +177,9 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {/* 💰 SUBSCRIPTION */}
+        {/* SUBSCRIPTION */}
         <Card className="mb-8 bg-linear-to-r from-primary to-primary/80 text-primary-foreground">
-          <CardContent className="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <CardContent className="p-6 flex flex-col md:flex-row justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Badge variant="secondary" className="bg-white/20 text-white">
@@ -180,17 +196,11 @@ export default function DashboardPage() {
                   ? 'You are getting maximum visibility 🚀'
                   : 'Get more leads & bookings'}
               </h3>
-
-              <p className="text-primary-foreground/80 mt-1">
-                {user?.isPremium
-                  ? 'Your profile is prioritized in search results.'
-                  : 'Upgrade to get featured & receive more inquiries.'}
-              </p>
             </div>
 
             {!user?.isPremium && (
               <Link href="/dashboard/subscription">
-                <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
+                <Button className="bg-accent text-accent-foreground">
                   Upgrade Now
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -199,58 +209,43 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* 📊 STATS */}
+        {/* STATS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {statsData.map((stat, index) => {
+          {statsData.map((stat) => {
             const Icon = stat.icon
 
             return (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="text-sm text-muted-foreground">
-                          {stat.label}
-                        </p>
-                        <p className="text-3xl font-bold text-foreground mt-1">
-                          {stat.value}
-                        </p>
-                      </div>
-
-                      <div className={`p-3 rounded-lg ${stat.color}`}>
-                        <Icon className="h-5 w-5" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
+              <Card key={stat.label}>
+                <CardContent className="p-6 flex justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">{stat.label}</p>
+                    <p className="text-3xl font-bold mt-1">{stat.value}</p>
+                  </div>
+                  <div className={`p-3 rounded-lg ${stat.color}`}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                </CardContent>
+              </Card>
             )
           })}
         </div>
 
-        <Card className="mt-8">
+        {/* LEADS */}
+        <Card>
           <CardHeader>
             <CardTitle>Recent Leads</CardTitle>
             <CardDescription>Latest customer inquiries</CardDescription>
           </CardHeader>
 
-          <CardContent className="space-y-3">
+          <CardContent>
             {stats.inquiries === 0 ? (
-              <p className="text-muted-foreground text-sm">
-                No leads yet
-              </p>
+              <p className="text-muted-foreground text-sm">No leads yet</p>
             ) : (
               <RecentLeads />
             )}
 
             <Link href="/dashboard/inquiries">
-              <Button variant="outline" className="w-full mt-2">
+              <Button variant="outline" className="w-full mt-3">
                 View All Leads
               </Button>
             </Link>
@@ -258,7 +253,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Quick Actions & Recently Viewed */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-4">
           {/* Quick Actions */}
           <Card>
             <CardHeader>

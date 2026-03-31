@@ -1,3 +1,4 @@
+// app\favorites\page.tsx
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -15,14 +16,14 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 
-const formatVendor = (v: any): Vendor => ({
+const formatVendor = (v: any, viewsMap: any, favMap: any): Vendor => ({
   ...v,
   coverImage: v.cover_image || '/placeholder.jpg',
   profileImage: v.profile_image || '/placeholder.jpg',
   gallery: [],
   services: [],
-  views: 0,
-  favoritesCount: 0,
+  views: viewsMap[v.id] || 0,
+  favoritesCount: favMap[v.id] || 0,
   minPrice: v.min_price,
   maxPrice: v.max_price,
   isPremium: v.is_premium,
@@ -43,13 +44,35 @@ function FavoritesContent() {
     const fetchData = async () => {
       setIsLoading(true)
 
-      // FAVORITES
-      const { data: favs } = await supabase
+      // 🔥 GET VIEWS
+      const { data: viewsData } = await supabase
+        .from('profile_views')
+        .select('vendor_id')
+
+      const viewsMap: Record<string, number> = {}
+
+      viewsData?.forEach(v => {
+        viewsMap[v.vendor_id] = (viewsMap[v.vendor_id] || 0) + 1
+      })
+
+       // FAVORITES
+      const { data: favCountData } = await supabase
+        .from('favorites')
+        .select('vendor_id')
+
+      const favMap: Record<string, number> = {}
+
+      favCountData?.forEach(f => {
+        favMap[f.vendor_id] = (favMap[f.vendor_id] || 0) + 1
+      })
+
+      // FAVORITES VENDORS
+      const { data: fav } = await supabase
         .from('favorites')
         .select('vendor_id')
         .eq('user_id', user.id)
 
-      const favIds = favs?.map(f => f.vendor_id) || []
+      const favIds = fav?.map(f => f.vendor_id) || []
 
       let favVendors: Vendor[] = []
       if (favIds.length > 0) {
@@ -58,7 +81,7 @@ function FavoritesContent() {
           .select('*')
           .in('id', favIds)
 
-        favVendors = data?.map(formatVendor) || []
+        favVendors = data?.map((v) => formatVendor(v, viewsMap, favMap)) || []
       }
 
       // RECENT
@@ -76,7 +99,7 @@ function FavoritesContent() {
           .select('*')
           .in('id', recIds)
 
-        recVendors = data?.map(formatVendor) || []
+        recVendors = data?.map((v) => formatVendor(v, viewsMap, favMap)) || []
       }
 
       setFavoriteVendors(favVendors)
