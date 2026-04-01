@@ -60,7 +60,7 @@ export function VendorCard({ vendor, index = 0 }: VendorCardProps) {
       >
         <div className="relative aspect-4/3 overflow-hidden">
           <Image
-            src={vendor.profileImage}
+            src={vendor.profileImage || '/placeholder.png'}
             alt={vendor.name}
             fill sizes ="(max-width: 768px) 100vw, 25vw"
             className="object-cover transition-transform duration-500 group-hover:scale-110"

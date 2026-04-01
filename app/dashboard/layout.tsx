@@ -45,7 +45,7 @@ function DashboardSidebar({ className }: { className?: string }) {
           <Image
             src="/bandhan-hublogo.png"
             alt="BandhanHub Logo"
-            className="h-35 mb-0"
+            className="h-35 mb-0 -ml-5"
             width={210}
             height={1}
           />
@@ -136,9 +136,9 @@ export default function DashboardLayout({
             <Image
               src="/bandhan-hublogo.png"
               alt="BandhanHub Logo"
-              className="h-29"
+              className="h-29 -ml-10"
               width={210}
-              height={1}
+              height={1}    
             />
           </Link>
 

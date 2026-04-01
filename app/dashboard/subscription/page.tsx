@@ -1,6 +1,7 @@
+// app/dashboard/subscription/page.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -18,18 +19,21 @@ const plans = [
     period: 'forever',
     description: 'Get started with basic features',
     features: [
+      'Basic Profile Page',
       'Listed on vendors page',
-      'Basic profile page',
-      'Up to 4 photos in gallery',
+      'Up to 5 photos in gallery',
       'WhatsApp contact button',
       'Limited visibility',
     ],
     notIncluded: [
+      'Lead management dashboard',
       'Homepage featured listing',
       'Featured badge',
-      'Priority in search results',
+      'Priority Ranking',
       'Analytics dashboard',
-      'Unlimited photos',
+      'Up to 50 photos',
+      'Instagram & call buttons',
+      'Premium support',
     ],
     popular: false,
   },
@@ -43,11 +47,12 @@ const plans = [
     features: [
       'Everything in Free, plus:',
       'Featured on homepage',
-      "top of search results",
+      'Lead management dashboard',
+      'Top in search results',
       'Featured badge on profile',
-      'Priority in search results',
+      'Priority Ranking',
       'Full analytics dashboard',
-      'Unlimited gallery photos',
+      'Up to 50 gallery photos',
       'Instagram & call buttons',
       'Premium support',
     ],
@@ -59,15 +64,14 @@ const plans = [
     price: 1999,
     originalPrice: 3999,
     period: 'year',
-    description: 'Save 17% with annual billing',
+    description: 'Best value (save 50%)',
     features: [
-      'Better Analytics',
-      'All Premium features',
-      'Featured on top of search results',
-      'Priority customer support',
-      'Early access to new features',
-      'Custom profile branding',
-      'marketing support by us'
+      'Everything in Premium',
+      'Better analytics',
+      'Top priority ranking',
+      'Early feature access',
+      'Custom branding (soon)',
+      'Marketing support (soon)',
     ],
     popular: false,
   },
@@ -75,8 +79,14 @@ const plans = [
 
 export default function SubscriptionPage() {
   const { user } = useAuth()
-  const currentPlan = user?.isPremium ? 'premium' : 'free'
   const [isLoading, setIsLoading] = useState<string | null>(null)
+
+  // ✅ FIX: Read actual plan from DB
+  const currentPlan = useMemo(() => {
+    if (user?.subscription_plan) return user.subscription_plan // 🔥 MAIN FIX
+    if (user?.isPremium) return 'premium'
+    return 'free'
+  }, [user])
 
   const handleSubscribe = async (planId: string) => {
     if (!user) {
@@ -87,7 +97,6 @@ export default function SubscriptionPage() {
     setIsLoading(planId)
 
     try {
-      // 1. Create order
       const res = await fetch('/api/razorpay/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -96,24 +105,23 @@ export default function SubscriptionPage() {
 
       const order = await res.json()
 
-      // 2. Open Razorpay
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: order.amount,
         currency: order.currency,
         name: "Bandhan-Hub",
-        description: planId === 'premium' ? "Monthly Premium Subscription" : "Annual Premium Subscription",
-        image: "https://v0-bandhan-hub-saa-s-platform.vercel.app/bandhan-hublogo.png",
+        description: planId === 'annual'
+          ? "Annual Premium Subscription"
+          : "Monthly Premium Subscription",
         order_id: order.id,
 
         handler: async function (response: any) {
-          // 3. Verify payment
           await fetch('/api/razorpay/verify-payment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               ...response,
-              userId: user.id, // 🔥 IMPORTANT
+              userId: user.id,
               plan: planId,
             }),
           })
@@ -125,10 +133,6 @@ export default function SubscriptionPage() {
         prefill: {
           name: user?.name,
           email: user?.email,
-        },
-
-        theme: {
-          color: "#6366f1",
         },
       }
 
@@ -145,43 +149,44 @@ export default function SubscriptionPage() {
 
   return (
     <div className="p-6 lg:p-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+
+        {/* HEADER */}
         <div className="text-center mb-12">
-          <h1 className="font-serif text-3xl font-bold text-foreground">
+          <h1 className="font-serif text-3xl font-bold">
             Upgrade Your Plan
           </h1>
-          <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
-            Get more visibility and reach more couples planning their perfect wedding
+          <p className="text-muted-foreground mt-2">
+            Get more visibility, leads & bookings 🚀
           </p>
         </div>
 
-        {/* Current Plan Banner */}
+        {/* CURRENT PLAN */}
         <Card className="mb-8 bg-linear-to-r from-primary/10 to-accent/10 border-primary/20">
-          <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+          <CardContent className="p-6 flex justify-between items-center flex-wrap gap-4">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-primary/20 rounded-full">
-                {currentPlan === 'premium' ? (
+              <div className="bg-primary/20 rounded-full">
+                {currentPlan !== 'free' ? (
                   <Crown className="h-6 w-6 text-primary" />
                 ) : (
                   <Star className="h-6 w-6 text-primary" />
                 )}
               </div>
+
               <div>
-                <h3 className="font-semibold text-foreground">
-                  Current Plan: {currentPlan === 'premium' ? 'Premium' : 'Free'}
+                <h3 className="font-semibold">
+                  Current Plan: {currentPlan === 'annual' ? 'Premium Annual' : currentPlan === 'premium' ? 'Premium Monthly' : 'Free'}
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  {currentPlan === 'premium'
-                    ? 'You have access to all premium features'
-                    : 'Upgrade to unlock more features'}
+                  {currentPlan === 'free'
+                    ? 'Upgrade to unlock growth features'
+                    : 'All premium features unlocked'}
                 </p>
               </div>
             </div>
-            {currentPlan === 'premium' && (
-              <Badge className="bg-accent text-accent-foreground">
+
+            {currentPlan !== 'free' && (
+              <Badge className="bg-green-500 text-white">
                 <Zap className="h-3 w-3 mr-1" />
                 Active
               </Badge>
@@ -189,103 +194,118 @@ export default function SubscriptionPage() {
           </CardContent>
         </Card>
 
-        {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {plans.map((plan, index) => (
-            <motion.div
-              key={plan.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <Card className={cn(
-                "h-full relative",
-                plan.popular && "border-primary shadow-lg"
-              )}>
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-primary text-primary-foreground">
-                      Most Popular
-                    </Badge>
-                  </div>
-                )}
+        {/* PLANS */}
+        <div className="grid md:grid-cols-3 gap-6">
+          {plans.map((plan, index) => {
 
-                <CardHeader className="text-center pb-4">
-                  <CardTitle className="text-xl">{plan.name}</CardTitle>
-                  <CardDescription>{plan.description}</CardDescription>
-                  <div className="mt-4 relative inline-block">
-                    {plan.originalPrice && (
-                      <span className="relative inline-block text-2xl font-semibold text-gray-500 mr-2">
-                        ₹{plan.originalPrice.toLocaleString()}
-                        <span className="absolute inset-0 flex items-center justify-center">
-                          <span className="w-full h-0.5 bg-red-500 rotate-12"></span>
-                        </span>
-                      </span>
-                    )}
-                    <span className="text-4xl font-bold text-foreground">
-                      ₹{plan.price.toLocaleString()}
-                    </span>
-                    <span className="text-muted-foreground">/{plan.period}</span>
-                  </div>
-                  {(plan.id === "premium" || plan.id === "annual") && (
-                    <div className="=flex justify-center mt-2">
-                    <Badge className="bg-green-500 text-white mt-2 h-10">
-                      <p className="text-sm font-semibold">🎉 Launch Offer Save 50% </p> 
-                    </Badge>
+            // ✅ FIX: Correct comparison
+            const isCurrent =
+              (currentPlan === 'free' && plan.id === 'free') ||
+              (currentPlan === 'premium' && plan.id === 'premium') ||
+              (currentPlan === 'annual' && plan.id === 'annual')
+
+            return (
+              <motion.div
+                key={plan.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card className={cn(
+                  "h-full relative",
+                  plan.popular && "border-primary shadow-lg"
+                )}>
+
+                  {plan.popular && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <Badge className="bg-primary text-white">
+                        Most Popular
+                      </Badge>
                     </div>
                   )}
-                </CardHeader>
 
-                <CardContent className="space-y-6">
-                  <ul className="space-y-3">
-                    {plan.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-2">
-                        <Check className="h-5 w-5 text-green-500 flex-0 mt-0.5" />
-                        <span className="text-sm text-foreground">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  {/* ✅ ACTIVE BADGE */}
+                  {isCurrent && (
+                    <div className="absolute top-3 right-3">
+                      <Badge className="bg-green-500 text-white">
+                        Active
+                      </Badge>
+                    </div>
+                  )}
 
-                  {plan.notIncluded && (
-                    <ul className="space-y-3 opacity-50">
-                      {plan.notIncluded.map((feature) => (
-                        <li key={feature} className="flex items-start gap-2">
-                          <Check className="h-5 w-5 text-muted-foreground flex-0 mt-0.5" />
-                          <span className="text-sm text-muted-foreground line-through">
-                            {feature}
-                          </span>
+                  <CardHeader className="text-center">
+                    <CardTitle>{plan.name}</CardTitle>
+                    <CardDescription>{plan.description}</CardDescription>
+
+                    <div className="mt-4">
+                      {plan.originalPrice && (
+                        <span className="text-xl line-through text-gray-400 mr-2">
+                          ₹{plan.originalPrice}
+                        </span>
+                      )}
+                      <span className="text-3xl font-bold">
+                        ₹{plan.price}
+                      </span>
+                      <span className="text-muted-foreground">/{plan.period}</span>
+                    </div>
+
+                    {plan.id !== 'free' && (
+                      <Badge className="bg-green-500 text-white mt-2">
+                        🎉 50% Launch Offer
+                      </Badge>
+                    )}
+                  </CardHeader>
+
+                  <CardContent className="space-y-6">
+                    <ul className="space-y-3">
+                      {plan.features.map((feature) => (
+                        <li key={feature} className="flex gap-2">
+                          <Check className="h-5 w-5 text-green-500 mt-0.5" />
+                          <span className="text-sm">{feature}</span>
                         </li>
                       ))}
                     </ul>
-                  )}
 
-                  <Button
-                    className={cn(
-                      "w-full",
-                      plan.popular
-                        ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                        : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                    {plan.notIncluded && (
+                      <ul className="space-y-3 opacity-50">
+                        {plan.notIncluded.map((feature) => (
+                          <li key={feature} className="flex gap-2">
+                            <Check className="h-5 w-5 mt-0.5" />
+                            <span className="text-sm line-through">{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
                     )}
-                    disabled={plan.id === currentPlan || isLoading !== null}
-                    onClick={() => handleSubscribe(plan.id)}
-                  >
-                    {isLoading === plan.id ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : plan.id === currentPlan ? (
-                      'Current Plan'
-                    ) : plan.id === 'free' ? (
-                      'Downgrade'
-                    ) : (
-                      'Upgrade Now'
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
+
+                    <Button
+                      className={cn(
+                        "w-full text-white",
+                        isCurrent
+                          ? "bg-primary hover:bg-primary-dark" // darker solid green
+                          : "bg-primary hover:bg-primary-dark"
+                        // faded/blurred for others
+                      )}
+                      disabled={isCurrent || isLoading !== null}
+                      onClick={() => handleSubscribe(plan.id)}
+                    >
+                      {isLoading === plan.id ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Processing...
+                        </>
+                      ) : isCurrent ? (
+                        'Current Plan'
+                      ) : plan.id === 'free' ? (
+                        'Downgrade'
+                      ) : (
+                        'Upgrade Now'
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )
+          })}
         </div>
 
         {/* FAQ */}
@@ -294,14 +314,6 @@ export default function SubscriptionPage() {
             <CardTitle>Frequently Asked Questions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div>
-              <h4 className="font-medium text-foreground mb-2">
-                Can I cancel anytime?
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                Yes, you can cancel your subscription at any time. You&apos;ll continue to have access until the end of your billing period.
-              </p>
-            </div>
             <div>
               <h4 className="font-medium text-foreground mb-2">
                 What payment methods do you accept?

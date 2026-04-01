@@ -80,7 +80,7 @@ export function CTASection() {
                   <div className="bg-accent/20 rounded-lg p-4 border-2 border-accent">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-white font-medium">Premium Plan</span>
-                      <span className="text-accent">₹999/month</span>
+                      <span className="text-accent">₹199/month</span>
                     </div>
                     <p className="text-white/60 text-sm">Featured on homepage + priority listing</p>
                   </div>

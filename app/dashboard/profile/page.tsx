@@ -377,58 +377,6 @@ export default function ProfileEditPage() {
                 <div className="h-16" />
               </CardContent>
             </Card>
-            {/* GALLERY */}
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  Portfolio Images ({gallery.length}/{vendorData.is_premium ? 50 : 5})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-
-                  {gallery.map((img, index) => (
-                    <div
-                      key={img.id}
-                      className="relative aspect-square cursor-pointer group"
-
-                    >
-                      <Image
-                        src={img.image_url}
-                        alt="gallery"
-                        fill
-                        className="object-cover rounded-lg"
-                        onClick={() => {
-                          setSelectedIndex(index)
-                          setZoom(1)
-                        }}
-                      />
-                      {/* DELETE BUTTON */}
-                      <button
-                        onClick={() => handleDeleteImage(img.id, img.image_url)}
-                        className="absolute top-2 right-2 bg-black/60 p-1 rounded-full opacity-0 group-hover:opacity-100 transition"
-                      >
-                        <Trash2 className="text-white w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-
-                  {/* Upload Box */}
-                  <label className="border-2 border-dashed flex items-center justify-center cursor-pointer p-4 rounded-lg">
-                    Upload
-                    <input
-                      type="file"
-                      multiple
-                      className="hidden"
-                      onChange={handleGalleryUpload}
-                    />
-                  </label>
-
-                </div>
-
-              </CardContent>
-            </Card>
 
             {/* BASIC INFO */}
             <Card className="lg:col-span-2">
@@ -573,6 +521,58 @@ export default function ProfileEditPage() {
               </Card>
             </div>
           </div>
+          {/* GALLERY */}
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                Portfolio Images ({gallery.length}/{vendorData.is_premium ? 50 : 5})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+
+                {gallery.map((img, index) => (
+                  <div
+                    key={img.id}
+                    className="relative aspect-square cursor-pointer group"
+
+                  >
+                    <Image
+                      src={img.image_url}
+                      alt="gallery"
+                      fill
+                      className="object-cover rounded-lg"
+                      onClick={() => {
+                        setSelectedIndex(index)
+                        setZoom(1)
+                      }}
+                    />
+                    {/* DELETE BUTTON */}
+                    <button
+                      onClick={() => handleDeleteImage(img.id, img.image_url)}
+                      className="absolute top-2 right-2 bg-black/60 p-1 rounded-full opacity-0 group-hover:opacity-100 transition"
+                    >
+                      <Trash2 className="text-white w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+
+                {/* Upload Box */}
+                <label className="border-2 border-dashed flex items-center justify-center cursor-pointer p-4 rounded-lg">
+                  Upload
+                  <input
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={handleGalleryUpload}
+                  />
+                </label>
+
+              </div>
+
+            </CardContent>
+          </Card>
 
           {/* SAVE BUTTON */}
           <div className="mt-8">
