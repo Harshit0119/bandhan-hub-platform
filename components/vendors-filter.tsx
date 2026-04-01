@@ -1,7 +1,7 @@
 // \components\vendors-filter.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,13 +30,14 @@ interface VendorsFilterProps {
   initialMaxBudget?: number
 }
 
-export function VendorsFilter({ 
-  initialCategory = '', 
+export function VendorsFilter({
+  initialCategory = '',
   initialCity = '',
   initialMinBudget,
-  initialMaxBudget 
+  initialMaxBudget,
 }: VendorsFilterProps) {
   const router = useRouter()
+
   const [category, setCategory] = useState(initialCategory)
   const [city, setCity] = useState(initialCity)
   const [minBudget, setMinBudget] = useState(initialMinBudget?.toString() || '')
@@ -49,6 +50,7 @@ export function VendorsFilter({
     if (city) params.set('city', city)
     if (minBudget) params.set('minBudget', minBudget)
     if (maxBudget) params.set('maxBudget', maxBudget)
+
     router.push(`/vendors?${params.toString()}`)
     setIsOpen(false)
   }
@@ -64,12 +66,15 @@ export function VendorsFilter({
 
   const hasFilters = category || city || minBudget || maxBudget
 
-  const FilterContent = () => (
+  // ✅ FIXED: Prevent re-render causing keyboard close
+  const FilterContent = useMemo(() => (
     <FieldGroup className="gap-4">
       <Field>
         <FieldLabel>Category</FieldLabel>
-        {/* <Select value={category} onValueChange={setCategory}> */}
-        <Select value={category} onValueChange={(v)=> setCategory(v === 'all' ? '' : v)}>
+        <Select
+          value={category}
+          onValueChange={(v) => setCategory(v === 'all' ? '' : v)}
+        >
           <SelectTrigger className="bg-card">
             <SelectValue placeholder="All categories" />
           </SelectTrigger>
@@ -108,6 +113,7 @@ export function VendorsFilter({
             className="bg-card"
           />
         </Field>
+
         <Field>
           <FieldLabel>Max Budget</FieldLabel>
           <Input
@@ -121,10 +127,14 @@ export function VendorsFilter({
       </div>
 
       <div className="flex gap-3 pt-2">
-        <Button onClick={applyFilters} className="flex-1 bg-primary text-primary-foreground">
+        <Button
+          onClick={applyFilters}
+          className="flex-1 bg-primary text-primary-foreground"
+        >
           <Search className="h-4 w-4 mr-2" />
           Apply Filters
         </Button>
+
         {hasFilters && (
           <Button variant="outline" onClick={clearFilters}>
             <X className="h-4 w-4" />
@@ -132,7 +142,7 @@ export function VendorsFilter({
         )}
       </div>
     </FieldGroup>
-  )
+  ), [category, city, minBudget, maxBudget])
 
   return (
     <>
@@ -140,7 +150,10 @@ export function VendorsFilter({
       <div className="hidden lg:block bg-card rounded-xl p-6 mb-8 border border-border">
         <div className="flex items-end gap-4">
           <div className="flex-1">
-            <Select value={category} onValueChange={(v) => { setCategory(v === 'all' ? '' : v); }}>
+            <Select
+              value={category}
+              onValueChange={(v) => setCategory(v === 'all' ? '' : v)}
+            >
               <SelectTrigger className="bg-background">
                 <SelectValue placeholder="All categories" />
               </SelectTrigger>
@@ -212,12 +225,19 @@ export function VendorsFilter({
               )}
             </Button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="h-auto max-h-[80vh]">
+
+          {/* ✅ FIXED: Prevent focus reset */}
+          <SheetContent
+            side="bottom"
+            className="h-auto max-h-[80vh]"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+          >
             <SheetHeader>
               <SheetTitle>Filter Vendors</SheetTitle>
             </SheetHeader>
+
             <div className="py-4">
-              <FilterContent />
+              {FilterContent}
             </div>
           </SheetContent>
         </Sheet>
