@@ -54,9 +54,9 @@ export function Navbar({ transparent = false }: NavbarProps) {
             <Image
               src="/bandhan-hublogo.png" 
               alt="BandhanHub Logo"
-             className="h-30"
-              width={220}
-              height={110}
+             className="object-contain"
+              width={190}
+              height={50}
             />
           </Link>
 

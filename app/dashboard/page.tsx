@@ -1,5 +1,4 @@
 // dashboard/page.tsx
-// dashboard/page.tsx
 'use client'
 
 import { useAuth } from '@/lib/auth-context'
@@ -20,15 +19,17 @@ import {
   Star,
   ArrowRight,
   Loader2,
-  Clock
+  Clock,
+  Lock
 } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { RecentLeads } from '@/components/recent-leads'
 import { getVendorIdByUserId } from '@/lib/db-actions'
 import Image from 'next/image'
+import { toast } from 'sonner'
 
 export default function DashboardPage() {
   const { user } = useAuth()
@@ -43,9 +44,13 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [vendorId, setVendorId] = useState<string | null>(null)
   const [recentVendors, setRecentVendors] = useState<any[]>([])
+  const isPremium = user?.isPremium
 
+  //============== OPTIMIZED FETCH===============
   useEffect(() => {
     if (!user?.id) return
+
+    let isMounted = true
 
     const fetchDashboardData = async () => {
       try {
@@ -59,17 +64,12 @@ export default function DashboardPage() {
           return
         }
 
+        if (!isMounted) return
         setVendorId(vId)
 
         // ✅ PARALLEL QUERIES (FAST)
-        const [
-          viewsRes,
-          favRes,
-          contactRes,
-          inquiryRes,
-        ] = await Promise.all([
-          supabase
-            .from('profile_views')
+        const [viewsRes, favRes, contactRes, inquiryRes] = await Promise.all([
+          supabase.from('profile_views')
             .select('*', { count: 'exact', head: true })
             .eq('vendor_id', vId),
 
@@ -89,6 +89,8 @@ export default function DashboardPage() {
             .eq('vendor_id', vId),
         ])
 
+        if (!isMounted) return
+
         setStats({
           views: viewsRes.count || 0,
           favorites: favRes.count || 0,
@@ -98,45 +100,36 @@ export default function DashboardPage() {
 
         // Fetch recently viewed vendors for couples
         if (!user?.isVendor) {
-          const { data } = await supabase
-            .from('recently_viewed')
-            .select('vendor:vendor_id(*)')
-            .eq('user_id', user?.id)
-            .order('created_at', { ascending: false })
-            .limit(5)
+          setTimeout(async () => {
+            const { data } = await supabase
+              .from('recently_viewed')
+              .select('vendor:vendor_id(*)')
+              .eq('user_id', user?.id)
+              .order('created_at', { ascending: false })
+              .limit(5)
 
-          setRecentVendors(data?.map(item => item.vendor).filter(Boolean) || [])
+            if (!isMounted) {
+              setRecentVendors(data?.map(item => item.vendor).filter(Boolean) || [])
+            }
+          }, 0)
         }
 
       } catch (err) {
         console.error('Dashboard Error:', err)
       } finally {
-        setLoading(false)
+        if (isMounted)
+          setLoading(false)
       }
     }
 
     fetchDashboardData()
+
+    return () => {
+      isMounted = false
+    }
   }, [user])
 
-  // ✅ LOADING
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    )
-  }
-
-  // ✅ NO VENDOR CASE
-  if (!vendorId) {
-    return (
-      <div className="p-6">
-        <p>No vendor profile found.</p>
-      </div>
-    )
-  }
-
-  const statsData = [
+  const statsData = useMemo(() => [
     {
       label: 'Profile Views',
       value: stats.views,
@@ -161,11 +154,34 @@ export default function DashboardPage() {
       icon: TrendingUp,
       color: 'text-purple-600 bg-purple-100',
     },
-  ]
+  ], [stats])
+
+  // ================= LOADING SKELETON =================
+  if (loading) {
+    return (
+      <div className="p-6 lg:p-8 space-y-6 animate-pulse">
+        <div className="h-8 w-60 bg-muted rounded" />
+        <div className="h-20 bg-muted rounded" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-24 bg-muted rounded" />
+          ))}
+        </div>
+        <div className="h-40 bg-muted rounded" />
+      </div>
+    )
+  }
+  if (!vendorId) {
+    return (
+      <div className="p-6">
+        <p>No vendor profile found.</p>
+      </div>
+    )
+  }
 
   return (
     <div className="p-6 lg:p-8">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
 
         {/* HEADER */}
         <div className="mb-8">
@@ -183,22 +199,23 @@ export default function DashboardPage() {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Badge variant="secondary" className="bg-white/20 text-white">
-                  {user?.isPremium ? 'Premium Plan' : 'Free Plan'}
+                  {isPremium ? 'Premium Plan' : 'Free Plan'}
                 </Badge>
 
-                {user?.isPremium && (
+                {isPremium && (
                   <Star className="h-5 w-5 fill-accent text-accent" />
                 )}
               </div>
 
               <h3 className="text-xl font-semibold">
-                {user?.isPremium
+                {isPremium
                   ? 'You are getting maximum visibility 🚀'
                   : 'Get more leads & bookings'}
               </h3>
             </div>
 
-            {!user?.isPremium && (
+            {/* {!user?.isPremium && ( */}
+            {!isPremium && (
               <Link href="/dashboard/subscription">
                 <Button className="bg-accent text-accent-foreground">
                   Upgrade Now
@@ -230,14 +247,28 @@ export default function DashboardPage() {
           })}
         </div>
 
-        {/* LEADS */}
-        <Card>
-          <CardHeader>
+        {/* LEADS (Locked for free) */}
+        <Card className="relative overflow-hidden">
+          {!isPremium && (
+            <div
+              onClick={() => {
+                toast.error('Upgrade to manage leads 🚀')
+              }}
+              className="absolute inset-0 z-10 backdrop-blur-md bg-white/40 flex flex-col items-center justify-center cursor-pointer"
+            >
+              <Lock className="mb-2" />
+              <p className="font-semibold">Premium Feature</p>
+              <p className="text-sm text-muted-foreground">
+                Manage leads from dashboard
+              </p>
+            </div>
+          )}
+          <CardHeader className={!isPremium ? 'blur-sm' : ''}>
             <CardTitle>Recent Leads</CardTitle>
             <CardDescription>Latest customer inquiries</CardDescription>
           </CardHeader>
 
-          <CardContent>
+          <CardContent className={!isPremium ? 'blur-sm' : ''}>
             {stats.inquiries === 0 ? (
               <p className="text-muted-foreground text-sm">No leads yet</p>
             ) : (

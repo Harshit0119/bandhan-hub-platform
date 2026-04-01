@@ -1,6 +1,7 @@
+// app\dashboard\profile\page.tsx
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -20,6 +21,7 @@ import { Camera, Loader2, Save, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
+import imageCompression from 'browser-image-compression'
 
 export default function ProfileEditPage() {
   const { user } = useAuth()
@@ -28,30 +30,14 @@ export default function ProfileEditPage() {
   const [vendorData, setVendorData] = useState<any>(null)
   const [gallery, setGallery] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const profileInputRef = useRef<HTMLInputElement | null>(null)
   const coverInputRef = useRef<HTMLInputElement | null>(null)
   const [showSharePopup, setShowSharePopup] = useState(false)
-  const createSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, '-')
-      .replace(/[^\w-]+/g, '')
-  }
 
-  const generateUniqueSlug = async (name: string) => {
-    const baseSlug = createSlug(name)
-
-    // check existing slugs
-    const { data } = await supabase
-      .from('vendors')
-      .select('slug')
-      .ilike('slug', `${baseSlug}%`)
-
-    if (!data || data.length === 0) return baseSlug
-
-    return `${baseSlug}-${data.length + 1}`
-  }
+  const isPremium = vendorData?.is_premium
+  const maxImages = isPremium ? 50 : 5
+  const draftKey = `vendor-draft-${user?.id}`
 
   const [formData, setFormData] = useState({
     name: '',
@@ -66,10 +52,43 @@ export default function ProfileEditPage() {
     about: '',
   })
 
+  // ================= SLUG =================
+  const createSlug = (name: string) =>
+    name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '')
+
+  const generateUniqueSlug = async (name: string) => {
+    const baseSlug = createSlug(name)
+
+    // check existing slugs
+    const { data } = await supabase
+      .from('vendors')
+      .select('slug')
+      .ilike('slug', `${baseSlug}%`)
+
+    if (!data || data.length === 0) return baseSlug
+    return `${baseSlug}-${data.length + 1}`
+  }
+
+  // ================= DRAFT SAVE (debounced) =================
   // ✅ FETCH VENDOR DATA
+  useEffect(() => {
+    if (!user) return
+    const timeout = setTimeout(() => {
+      if (formData.name || formData.category || formData.city || formData.phone || formData.whatsapp || formData.instagram || formData.experience || formData.minPrice || formData.maxPrice || formData.about) {
+        localStorage.setItem(
+          draftKey,
+          JSON.stringify(formData)
+        )
+      }
+    }, 500)
+    return () => clearTimeout(timeout)
+  }, [formData, user])
+
+  // ================= FETCH =================
   useEffect(() => {
     const fetchVendor = async () => {
       if (!user) return
+      setIsLoading(true)
 
       const { data: vendor, error } = await supabase
         .from('vendors')
@@ -77,67 +96,37 @@ export default function ProfileEditPage() {
         .eq('user_id', user.id)
         .maybeSingle()
 
-      if (error) {
-        console.error(error)
-        return
-      }
-
-      if (!vendor) {
-        console.error('Vendor not found (trigger issue)')
-        return
-      }
+      if (!vendor) return
 
       setVendorData(vendor)
 
-      setFormData({
-        name: vendor.name || '',
-        category: vendor.category || '',
-        city: vendor.city || '',
-        phone: vendor.phone || '',
-        whatsapp: vendor.whatsapp || '',
-        instagram: vendor.instagram || '',
-        experience: vendor.experience || '',
-        minPrice: vendor.min_price?.toString() || '',
-        maxPrice: vendor.max_price?.toString() || '',
-        about: vendor.about || '',
-      })
+      const savedDraft = localStorage.getItem(`vendor-draft-${user.id}`)
+
+      if (savedDraft) {
+        setFormData(JSON.parse(savedDraft))
+      } else {
+        setFormData({
+          name: vendor.name || '',
+          category: vendor.category || '',
+          city: vendor.city || '',
+          phone: vendor.phone || '',
+          whatsapp: vendor.whatsapp || '',
+          instagram: vendor.instagram || '',
+          experience: vendor.experience || '',
+          minPrice: vendor.min_price?.toString() || '',
+          maxPrice: vendor.max_price?.toString() || '',
+          about: vendor.about || '',
+        })
+      }
+      setIsLoading(false)
     }
 
     fetchVendor()
 
   }, [user])
 
-  // ================= Delete Image =================
-  const handleDeleteImage = async (id: string, imageUrl: string) => {
-    console.log("Deleting:", id)
-
-    const { data, error } = await supabase
-      .from('vendor_images')
-      .delete()
-      .eq('id', id)
-      .select()
-
-    if (error) {
-      console.error("DELETE ERROR:", error)
-      toast.error('Delete failed')
-      return
-    }
-
-    console.log("Deleted from DB:", data)
-
-    // delete from storage
-    const path = imageUrl.split('/bandhan-hub/')[1]
-    if (path) {
-      await supabase.storage.from('bandhan-hub').remove([path])
-    }
-
-    setGallery((prev) => prev.filter((img) => img.id !== id))
-
-    toast.success('Image deleted')
-  }
-
   // ================= FETCH GALLERY =================
-  const fetchGallery = async () => {
+  const fetchGallery = useCallback(async () => {
     if (!vendorData) return
 
     const { data } = await supabase
@@ -146,11 +135,11 @@ export default function ProfileEditPage() {
       .eq('vendor_id', vendorData.id)
 
     setGallery(data || [])
-  }
+  }, [vendorData])
 
   useEffect(() => {
     if (vendorData) fetchGallery()
-  }, [vendorData])
+  }, [vendorData, fetchGallery])
 
   // ================= IMAGE UPLOAD =================
   const handleImageUpload = async (
@@ -160,125 +149,151 @@ export default function ProfileEditPage() {
     const file = e.target.files?.[0]
     if (!file || !user) return
 
-    const filePath = `${user.id}-${type}-${Date.now()}`
+    try {
+      const compressed = await imageCompression(file, {
+        maxSizeMB: 0.7,
+        maxWidthOrHeight: 1200,
+      })
 
-    const { error } = await supabase.storage
-      .from('bandhan-hub')
-      .upload(filePath, file, {
-        cacheControl: '3600',
+      const filePath = `${user.id}-${type}-${Date.now()}`
+
+      await supabase.storage.from('bandhan-hub').upload(filePath, compressed, {
         upsert: true,
       })
 
-    if (error) {
-      console.error(error)
-      toast.error('Upload failed')
-      return
-    }
+      const { data } = supabase.storage.from('bandhan-hub').getPublicUrl(filePath)
 
-    const { data } = supabase.storage
-      .from('bandhan-hub')
-      .getPublicUrl(filePath)
+      const publicUrl = data.publicUrl
 
-    const publicUrl = data.publicUrl
+      await supabase
+        .from('vendors')
+        .update({
+          [type === 'profile' ? 'profile_image' : 'cover_image']: publicUrl,
+        })
+        .eq('user_id', user.id)
 
-    // update DB
-    await supabase
-      .from('vendors')
-      .update({
+      setVendorData((prev: any) => ({
+        ...prev,
         [type === 'profile' ? 'profile_image' : 'cover_image']: publicUrl,
-      })
-      .eq('user_id', user.id)
+      }))
 
-    // update UI instantly
-    setVendorData((prev: any) => ({
-      ...prev,
-      [type === 'profile' ? 'profile_image' : 'cover_image']: publicUrl,
-    }))
-
-    toast.success('Image uploaded!')
+      toast.success('Image updated ⚡')
+    } catch {
+      toast.error('Upload failed')
+    }
   }
 
-  // ================= GALLERY UPLOAD =================
+  // ================= GALLERY =================
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || !vendorData || !user) return
 
-    if (gallery.length + files.length > 10) {
-      toast.error('Max 10 images allowed')
+    if (gallery.length >= maxImages) {
+      toast.error(`Limit reached (${gallery.length}/${maxImages}) upgrade your plan for more 🚀`)
       return
     }
 
-    const uploads = []
+    const allowedFiles = Array.from(files).slice(0, maxImages - gallery.length)
 
-    for (let file of Array.from(files)) {
-      const filePath = `${user.id}/gallery/${Date.now()}-${file.name}`
+    try {
+      const uploads = await Promise.all(
+        allowedFiles.map(async (file) => {
+          const compressed = await imageCompression(file, {
+            maxSizeMB: 0.5,
+            maxWidthOrHeight: 1280,
+          })
 
-      await supabase.storage.from('bandhan-hub').upload(filePath, file)
+          const filePath = `${user.id}/gallery/${Date.now()}-${compressed.name}`
 
-      const { data } = supabase.storage
-        .from('bandhan-hub')
-        .getPublicUrl(filePath)
+          await supabase.storage.from('bandhan-hub').upload(filePath, compressed)
 
-      uploads.push({
-        vendor_id: vendorData.id,
-        image_url: data.publicUrl,
-      })
+          const { data } = supabase.storage.from('bandhan-hub').getPublicUrl(filePath)
+
+          return {
+            vendor_id: vendorData.id,
+            image_url: data.publicUrl,
+          }
+        })
+      )
+
+      await supabase.from('vendor_images').insert(uploads)
+
+      fetchGallery()
+      toast.success('Gallery updated 🚀')
+    } catch {
+      toast.error('Upload failed')
+    }
+  }
+
+  // ================= Delete Image =================
+  const handleDeleteImage = async (id: string, imageUrl: string) => {
+    await supabase.from('vendor_images').delete().eq('id', id)
+
+    const path = imageUrl.split('/bandhan-hub/')[1]
+    if (path) {
+      await supabase.storage.from('bandhan-hub').remove([path])
     }
 
-    await supabase.from('vendor_images').insert(uploads)
-
-    toast.success('Gallery updated')
-    fetchGallery()
+    setGallery((prev) => prev.filter((img) => img.id !== id))
+    toast.success('Deleted')
   }
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  // ✅ UPDATE DATA
+  const handlePremiumClick = () => {
+    if (!isPremium) toast.error('Upgrade to grow your business 🚀')
+  }
+
+  // ================= SAVE =================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
-
     if (!user) return
 
-    let slug = vendorData.slug
+    setIsSaving(true)
 
-    // ✅ only generate if not exists
-    if (!slug && formData.name) {
-      slug = await generateUniqueSlug(formData.name)
-    }
+    try {
+      let slug = vendorData.slug
 
-    const { error } = await supabase
-      .from('vendors')
-      .update({
+      if (!slug && formData.name) {
+        slug = await generateUniqueSlug(formData.name)
+      }
+
+      const updatePayload: any = {
         name: formData.name,
-        slug: slug,
         category: formData.category,
         city: formData.city,
-        phone: formData.phone,
         whatsapp: formData.whatsapp,
-        instagram: formData.instagram,
         experience: formData.experience,
         about: formData.about,
-        min_price: parseInt(formData.minPrice),
-        max_price: parseInt(formData.maxPrice),
-      })
-      .eq('user_id', user.id)
+        min_price: Number(formData.minPrice) || 0,
+        max_price: Number(formData.maxPrice) || 0,
+      }
 
-    if (error) {
-      console.error("Error updating profile:", error)
-      toast.error('Failed to update profile')
-    } else {
-      toast.success('Profile updated successfully!')
+      if (slug) updatePayload.slug = slug
+      if (isPremium) {
+        updatePayload.phone = formData.phone
+        updatePayload.instagram = formData.instagram
+      }
+
+      await supabase
+        .from('vendors')
+        .update(updatePayload).eq('user_id', user.id)
+
+      localStorage.removeItem(draftKey)
+
+      toast.success('Profile Updated Successfully⚡')
       setShowSharePopup(true)
+    } catch {
+      toast.error('Failed to save')
+    } finally {
+      setIsLoading(false)
     }
-
-    setIsLoading(false)
   }
 
   // ✅ LOADING SCREEN
-  if (!vendorData) {
+  if (isLoading || !vendorData) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -365,7 +380,9 @@ export default function ProfileEditPage() {
             {/* GALLERY */}
             <Card>
               <CardHeader>
-                <CardTitle>Portfolio Images</CardTitle>
+                <CardTitle>
+                  Portfolio Images ({gallery.length}/{vendorData.is_premium ? 50 : 5})
+                </CardTitle>
               </CardHeader>
               <CardContent>
 
@@ -490,15 +507,6 @@ export default function ProfileEditPage() {
                 <CardContent>
                   <FieldGroup>
                     <Field>
-                      <FieldLabel>Phone Number</FieldLabel>
-                      <Input
-                        value={formData.phone}
-                        onChange={(e) => handleChange('phone', e.target.value)}
-                        placeholder="+91 98765 43210"
-                      />
-                    </Field>
-
-                    <Field>
                       <FieldLabel>WhatsApp Number</FieldLabel>
                       <Input
                         value={formData.whatsapp}
@@ -508,12 +516,29 @@ export default function ProfileEditPage() {
                     </Field>
 
                     <Field>
+                      <FieldLabel>Phone Number</FieldLabel>
+                      <div onClick={handlePremiumClick}>
+                        <Input
+                          value={isPremium ? formData.phone : ''}
+                          onChange={(e) => isPremium && handleChange('phone', e.target.value)}
+                          placeholder={isPremium ? "+91 98765 43210" : "🔒 Premium feature"}
+                          disabled={!isPremium}
+                          className={isPremium ? "cursor-not-allowed bg-muted opacity-60" : ""}
+                        />
+                      </div>
+                    </Field>
+
+                    <Field>
                       <FieldLabel>Instagram Handle</FieldLabel>
-                      <Input
-                        value={formData.instagram}
-                        onChange={(e) => handleChange('instagram', e.target.value)}
-                        placeholder="your user name"
-                      />
+                      <div onClick={handlePremiumClick}>
+                        <Input
+                          value={isPremium ? formData.instagram : ''}
+                          onChange={(e) => isPremium && handleChange('instagram', e.target.value)}
+                          placeholder={isPremium ? "your user name" : "🔒 Premium feature"}
+                          disabled={!isPremium}
+                          className={isPremium ? "cursor-not-allowed bg-muted opacity-60" : ""}
+                        />
+                      </div>
                     </Field>
                   </FieldGroup>
                 </CardContent>
@@ -650,7 +675,7 @@ export default function ProfileEditPage() {
             </p>
 
             <div className="bg-gray-100 p-3 rounded mb-4 text-sm break-all">
-              {`${window.location.origin}/vendor/${vendorData.slug}`}
+              {`${window.location.origin}/vendor/${vendorData.slug || vendorData.id}`}
             </div>
 
             <div className="flex flex-col gap-3">
@@ -659,7 +684,7 @@ export default function ProfileEditPage() {
               <Button
                 onClick={() => {
                   navigator.clipboard.writeText(
-                    `${window.location.origin}/vendor/${vendorData.slug}`
+                    `${window.location.origin}/vendor/${vendorData.slug || vendorData.id}`
                   )
                   toast.success("Link copied!")
                 }}
@@ -671,7 +696,7 @@ export default function ProfileEditPage() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  const url = `${window.location.origin}/vendor/${vendorData.slug}`
+                  const url = `${window.location.origin}/vendor/${vendorData.slug || vendorData.id}`
                   window.open(`https://wa.me/?text=Check my services: ${url}`)
                 }}
               >
