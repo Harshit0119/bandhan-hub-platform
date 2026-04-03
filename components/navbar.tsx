@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,9 +53,9 @@ export function Navbar({ transparent = false }: NavbarProps) {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
             <Image
-              src="/bandhan-hublogo.png" 
+              src="/bandhan-hublogo.png"
               alt="BandhanHub Logo"
-             className="object-contain -ml-10"
+              className="object-contain -ml-10"
               width={240}
               height={50}
             />
@@ -196,7 +197,10 @@ export function Navbar({ transparent = false }: NavbarProps) {
                         Favorites
                       </Button>
                     </Link>
-                    <Button variant="destructive" className="w-full justify-start gap-2" onClick={() => { logout(); setMobileMenuOpen(false); }}>
+                    <Button variant="destructive" className="w-full justify-start gap-2" onClick={() => {
+                      logout(); setMobileMenuOpen(false);
+                      router.push("/login");
+                    }}>
                       <LogOut className="h-4 w-4" />
                       Logout
                     </Button>
