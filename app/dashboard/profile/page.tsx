@@ -160,8 +160,9 @@ export default function ProfileEditPage() {
       setIsSaving(true)
 
       const compressed = await imageCompression(file, {
-        maxSizeMB: 0.7,
-        maxWidthOrHeight: 1200,
+        maxSizeMB: 0.3,
+        maxWidthOrHeight: 1000,
+        useWebWorker: true,
       })
 
       const filePath = `${user.id}-${type}-${Date.now()}`
@@ -590,18 +591,21 @@ export default function ProfileEditPage() {
                 ))}
 
                 {/* Upload Box */}
-                <label className="border-2 border-dashed flex items-center justify-center cursor-pointer p-4 rounded-lg">
+                <div onClick={() => document.getElementById('galleryInput')?.click()}
+
+                  className="border-2 border-dashed flex items-center justify-center cursor-pointer p-4 rounded-lg">
                   Upload
-                  <input
-                    type="file"
-                    multiple
-                    className="hidden"
-                    onChange={handleGalleryUpload}
-                  />
-                </label>
+                </div>
 
+                <input
+                  id="galleryInput"
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleGalleryUpload}
+                />
               </div>
-
             </CardContent>
           </Card>
 
@@ -630,126 +634,130 @@ export default function ProfileEditPage() {
       </motion.div>
 
       {/* ===== FULLSCREEN IMAGE VIEWER ===== */}
-      {selectedIndex !== null && (
-        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
+      {
+        selectedIndex !== null && (
+          <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
 
-          {/* CLOSE BUTTON */}
-          <button
-            className="absolute top-4 right-4 text-white text-3xl"
-            onClick={() => setSelectedIndex(null)}
-          >
-            ✕
-          </button>
-
-          {/* PREVIOUS */}
-          <button
-            className="absolute left-4 text-white text-4xl"
-            onClick={() =>
-              setSelectedIndex((prev) =>
-                prev === 0 ? gallery.length - 1 : (prev as number) - 1
-              )
-            }
-          >
-            ‹
-          </button>
-
-          {/* IMAGE */}
-          <div className="w-full h-full flex items-center justify-center">
-            <img
-              src={gallery[selectedIndex].image_url}
-              alt="preview"
-              style={{
-                transform: `scale(${zoom})`,
-                transition: '0.3s',
-              }}
-              className="max-h-[90%] max-w-[90%] object-contain touch-none"
-            />
-          </div>
-
-          {/* NEXT */}
-          <button
-            className="absolute right-4 text-white text-4xl"
-            onClick={() =>
-              setSelectedIndex((prev) =>
-                prev === gallery.length - 1 ? 0 : (prev as number) + 1
-              )
-            }
-          >
-            ›
-          </button>
-
-          {/* ZOOM CONTROLS */}
-          <div className="absolute bottom-6 flex gap-4">
+            {/* CLOSE BUTTON */}
             <button
-              className="bg-white px-3 py-1 rounded"
-              onClick={() => setZoom((z) => Math.max(1, z - 0.5))}
+              className="absolute top-4 right-4 text-white text-3xl"
+              onClick={() => setSelectedIndex(null)}
             >
-              -
+              ✕
             </button>
+
+            {/* PREVIOUS */}
             <button
-              className="bg-white px-3 py-1 rounded"
-              onClick={() => setZoom((z) => z + 0.5)}
+              className="absolute left-4 text-white text-4xl"
+              onClick={() =>
+                setSelectedIndex((prev) =>
+                  prev === 0 ? gallery.length - 1 : (prev as number) - 1
+                )
+              }
             >
-              +
+              ‹
             </button>
+
+            {/* IMAGE */}
+            <div className="w-full h-full flex items-center justify-center">
+              <img
+                src={gallery[selectedIndex].image_url}
+                alt="preview"
+                style={{
+                  transform: `scale(${zoom})`,
+                  transition: '0.3s',
+                }}
+                className="max-h-[90%] max-w-[90%] object-contain touch-none"
+              />
+            </div>
+
+            {/* NEXT */}
+            <button
+              className="absolute right-4 text-white text-4xl"
+              onClick={() =>
+                setSelectedIndex((prev) =>
+                  prev === gallery.length - 1 ? 0 : (prev as number) + 1
+                )
+              }
+            >
+              ›
+            </button>
+
+            {/* ZOOM CONTROLS */}
+            <div className="absolute bottom-6 flex gap-4">
+              <button
+                className="bg-white px-3 py-1 rounded"
+                onClick={() => setZoom((z) => Math.max(1, z - 0.5))}
+              >
+                -
+              </button>
+              <button
+                className="bg-white px-3 py-1 rounded"
+                onClick={() => setZoom((z) => z + 0.5)}
+              >
+                +
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
       {/* SHARE POPUP */}
-      {showSharePopup && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+      {
+        showSharePopup && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
 
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md text-center shadow-xl">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-md text-center shadow-xl">
 
-            <h2 className="text-2xl font-bold mb-2">
-              🎉 Profile Ready!
-            </h2>
+              <h2 className="text-2xl font-bold mb-2">
+                🎉 Profile Ready!
+              </h2>
 
-            <p className="text-muted-foreground mb-4">
-              Share your profile with customers and start getting bookings
-            </p>
+              <p className="text-muted-foreground mb-4">
+                Share your profile with customers and start getting bookings
+              </p>
 
-            <div className="bg-gray-100 p-3 rounded mb-4 text-sm break-all">
-              {`${window.location.origin}/vendor/${vendorData.slug || vendorData.id}`}
-            </div>
+              <div className="bg-gray-100 p-3 rounded mb-4 text-sm break-all">
+                {`${window.location.origin}/vendor/${vendorData.slug || vendorData.id}`}
+              </div>
 
-            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3">
 
-              {/* COPY LINK */}
-              <Button
-                onClick={() => {
-                  navigator.clipboard.writeText(
-                    `${window.location.origin}/vendor/${vendorData.slug || vendorData.id}`
-                  )
-                  toast.success("Link copied!")
-                }}
-              >
-                Copy Link
-              </Button>
+                {/* COPY LINK */}
+                <Button
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      `${window.location.origin}/vendor/${vendorData.slug || vendorData.id}`
+                    )
+                    toast.success("Link copied!")
+                  }}
+                >
+                  Copy Link
+                </Button>
 
-              {/* WHATSAPP SHARE */}
-              <Button
-                variant="outline"
-                onClick={() => {
-                  const url = `${window.location.origin}/vendor/${vendorData.slug || vendorData.id}`
-                  window.open(`https://wa.me/?text=Check my services: ${url}`)
-                }}
-              >
-                Share on WhatsApp
-              </Button>
+                {/* WHATSAPP SHARE */}
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const url = `${window.location.origin}/vendor/${vendorData.slug || vendorData.id}`
+                    window.open(`https://wa.me/?text=Check my services: ${url}`)
+                  }}
+                >
+                  Share on WhatsApp
+                </Button>
 
-              {/* CLOSE */}
-              <Button
-                variant="ghost"
-                onClick={() => setShowSharePopup(false)}
-              >
-                Close
-              </Button>
+                {/* CLOSE */}
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowSharePopup(false)}
+                >
+                  Close
+                </Button>
 
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
     </div >
   )
 }
