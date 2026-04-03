@@ -54,7 +54,8 @@ export type VendorCategory =
   | "Anchor"
   | "Decorator"
   | "Beauty Parlour"
-  | "Custom";
+  | "Clothing"
+  | "Card Printing";
 
 export const VENDOR_CATEGORIES: VendorCategory[] = [
   "Photographer",
@@ -67,6 +68,8 @@ export const VENDOR_CATEGORIES: VendorCategory[] = [
   "Anchor",
   "Decorator",
   "Beauty Parlour",
+  "Clothing",
+  "Card Printing"
 ];
 
 export interface Testimonial {
