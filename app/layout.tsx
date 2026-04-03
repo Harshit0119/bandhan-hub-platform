@@ -1,3 +1,5 @@
+// app/layout.tsx
+
 import type { Metadata, Viewport } from 'next'
 import { Playfair_Display, Lato } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
@@ -21,14 +23,14 @@ const lato = Lato({
 
 export const metadata: Metadata = {
   title: 'BandhanHub - Bringing Your Wedding Team Together',
-  description: 'Find and connect with the best wedding vendors across India. From photographers to makeup artists, planners to decorators - BandhanHub is your one-stop destination for all wedding services.',
-  keywords: ['wedding vendors', 'wedding planners', 'photographers', 'makeup artists', 'Indian weddings', 'wedding marketplace',],
+  description:
+    'Find and connect with the best wedding vendors across India.',
   icons: {
-    icon: "/Wedding logo transpa.ico", 
+    icon: '/bandhanhub.ico',
   },
   openGraph: {
-    title: 'BandhanHub - Bringing Your Wedding Team Together',
-    description: 'Find and connect with the best wedding vendors across India.',
+    title: 'BandhanHub',
+    description: 'Find the best wedding vendors across India.',
     type: 'website',
   },
 }
@@ -41,20 +43,30 @@ export const viewport: Viewport = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
-    <html lang="en">
-      <body className={`${playfair.variable} ${lato.variable} font-sans antialiased`}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${playfair.variable} ${lato.variable} font-sans antialiased overflow-x-hidden`}
+      >
+        {/* ✅ Load Razorpay AFTER page load (performance fix) */}
         <Script
-        src="https://checkout.razorpay.com/v1/checkout.js" 
-        strategy="beforeInteractive"
-        />  
+          src="https://checkout.razorpay.com/v1/checkout.js"
+          strategy="lazyOnload"
+        />
+
+        {/* ✅ Auth wrapper */}
         <AuthProvider>
-          {children}
+          {/* ✅ Prevent blank screen feeling */}
+          <div className="min-h-screen">
+            {children}
+          </div>
+
           <Toaster />
         </AuthProvider>
+
+        {/* ✅ Analytics (non-blocking) */}
         <Analytics />
       </body>
     </html>

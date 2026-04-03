@@ -45,7 +45,7 @@ function DashboardSidebar({ className }: { className?: string }) {
           <Image
             src="/bandhan-hublogo.png"
             alt="BandhanHub Logo"
-            className="h-35 mb-0 -ml-5"
+            className="h-35 mb-0 -ml-1=5"
             width={210}
             height={1}
           />

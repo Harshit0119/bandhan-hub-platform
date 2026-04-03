@@ -1,4 +1,4 @@
-// \lib\auth-context.tsx
+// lib\auth-context.tsx
 
 'use client'
 
@@ -31,33 +31,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // 🔹 Fetch profile
   const fetchUserProfile = async (userId: string, email: string): Promise<User | null> => {
-    for (let i = 0; i < 3; i++) {
+    try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 5000)
+
       const { data: profile } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle()
 
-      if (profile) {
-        const { data: vendor } = await supabase
-          .from('vendors')
-          .select('id, is_premium, subscription_plan')
-          .eq('user_id', userId)
-          .maybeSingle()
+      clearTimeout(timeout)
 
-        return {
-          id: userId,
-          email,
-          name: profile.name,
-          isVendor: profile.is_vendor ?? false,
-          vendorId: vendor?.id ?? null,
-          isPremium: vendor?.is_premium ?? false,
-          subscription_plan: vendor?.subscription_plan ?? 'free', // 🔥 ADDED PLAN FIELD
-        }
+      if (!profile) return null
+
+      const { data: vendor } = await supabase
+        .from('vendors')
+        .select('id, is_premium, subscription_plan')
+        .eq('user_id', userId)
+        .maybeSingle()
+
+      return {
+        id: userId,
+        email,
+        name: profile.name,
+        isVendor: profile.is_vendor ?? false,
+        vendorId: vendor?.id ?? null,
+        isPremium: vendor?.is_premium ?? false,
+        subscription_plan: vendor?.subscription_plan ?? 'free',
       }
-      await new Promise(res => setTimeout(res, 500)) // retry delay
+    } catch (err) {
+      console.error("Auth fetch error:", err)
+      return null
     }
-    return null
   }
 
   // 🔹 Session check
@@ -135,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     if (error) throw error
-    
+
     const user = data.user
     if (!user) return data
 

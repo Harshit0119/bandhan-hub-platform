@@ -1,3 +1,4 @@
+//app\signup\page.tsx
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
@@ -67,7 +68,7 @@ function SignupForm() {
     setIsLoading(true)
 
     try {
-      await signup(email, password, name, activeTab === 'vendor')
+      const res = await signup(email, password, name, activeTab === 'vendor')
 
       toast.success('Account created successfully!')
       if (activeTab === 'vendor') {

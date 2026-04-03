@@ -127,7 +127,9 @@ export default function ProfileEditPage() {
 
   // ================= FETCH GALLERY =================
   const fetchGallery = useCallback(async () => {
-    if (!vendorData) return
+    if (!vendorData) {
+      return <div className="text-center py-10">No data found</div>
+    }
 
     const { data } = await supabase
       .from('vendor_images')
@@ -149,7 +151,14 @@ export default function ProfileEditPage() {
     const file = e.target.files?.[0]
     if (!file || !user) return
 
+    if (!file.type.startsWith('image/')) {
+      toast.error('Only images allowed')
+      return
+    }
+
     try {
+      setIsSaving(true)
+
       const compressed = await imageCompression(file, {
         maxSizeMB: 0.7,
         maxWidthOrHeight: 1200,
@@ -157,20 +166,26 @@ export default function ProfileEditPage() {
 
       const filePath = `${user.id}-${type}-${Date.now()}`
 
-      await supabase.storage.from('bandhan-hub').upload(filePath, compressed, {
-        upsert: true,
-      })
+      const { error: uploadError } = await supabase.storage
+        .from('bandhan-hub')
+        .upload(filePath, compressed, { upsert: true })
 
-      const { data } = supabase.storage.from('bandhan-hub').getPublicUrl(filePath)
+      if (uploadError) throw uploadError
+
+      const { data } = supabase.storage
+        .from('bandhan-hub')
+        .getPublicUrl(filePath)
 
       const publicUrl = data.publicUrl
 
-      await supabase
+      const { error: updateError } = await supabase
         .from('vendors')
         .update({
           [type === 'profile' ? 'profile_image' : 'cover_image']: publicUrl,
         })
         .eq('user_id', user.id)
+
+      if (updateError) throw updateError
 
       setVendorData((prev: any) => ({
         ...prev,
@@ -178,8 +193,11 @@ export default function ProfileEditPage() {
       }))
 
       toast.success('Image updated ⚡')
-    } catch {
+    } catch (err) {
+      console.error(err)
       toast.error('Upload failed')
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -216,7 +234,9 @@ export default function ProfileEditPage() {
         })
       )
 
-      await supabase.from('vendor_images').insert(uploads)
+      const { error: insertError } = await supabase.from('vendor_images').insert(uploads)
+
+      if (insertError) throw insertError
 
       fetchGallery()
       toast.success('Gallery updated 🚀')
@@ -272,28 +292,34 @@ export default function ProfileEditPage() {
       }
 
       if (slug) updatePayload.slug = slug
+
       if (isPremium) {
         updatePayload.phone = formData.phone
         updatePayload.instagram = formData.instagram
       }
 
-      await supabase
+      const { error } = await supabase
         .from('vendors')
-        .update(updatePayload).eq('user_id', user.id)
+        .update(updatePayload)
+        .eq('user_id', user.id)
+
+      if (error) throw error
 
       localStorage.removeItem(draftKey)
 
-      toast.success('Profile Updated Successfully⚡')
+      toast.success('Profile Updated Successfully ⚡')
       setShowSharePopup(true)
-    } catch {
-      toast.error('Failed to save')
+
+    } catch (err) {
+      console.error(err)
+      toast.error('Failed to save profile ❌')
     } finally {
-      setIsLoading(false)
+      setIsSaving(false) // ✅ FIXED
     }
   }
 
   // ✅ LOADING SCREEN
-  if (isLoading || !vendorData) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -329,7 +355,7 @@ export default function ProfileEditPage() {
                     className="relative w-full h-48 rounded-xl overflow-hidden bg-secondary cursor-pointer group"
                   >
                     <Image
-                      src={vendorData.cover_image || '/placeholder.jpg'}
+                      src={vendorData?.cover_image || '/placeholder.jpg'}
                       alt="Cover"
                       fill
                       className="object-cover"
@@ -345,10 +371,11 @@ export default function ProfileEditPage() {
                     className="absolute -bottom-12 left-6 w-28 h-28 rounded-2xl border-4 border-white overflow-hidden cursor-pointer group bg-secondary"
                   >
                     <Image
-                      src={vendorData.profile_image || '/placeholder.jpg'}
+                      src={vendorData?.profile_image || '/placeholder.jpg'}
                       alt="Profile"
                       fill
                       className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 300px"
                     />
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
                       <Camera className="text-white" />
@@ -525,7 +552,7 @@ export default function ProfileEditPage() {
           <Card>
             <CardHeader>
               <CardTitle>
-                Portfolio Images ({gallery.length}/{vendorData.is_premium ? 50 : 5})
+                Portfolio Images ({gallery.length}/{vendorData?.is_premium ? 50 : 5})
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -535,23 +562,27 @@ export default function ProfileEditPage() {
                 {gallery.map((img, index) => (
                   <div
                     key={img.id}
-                    className="relative aspect-square cursor-pointer group"
+                    className="relative aspect-square cursor-pointer group overflow-hidden rounded-lg"
 
                   >
                     <Image
                       src={img.image_url}
                       alt="gallery"
                       fill
-                      className="object-cover rounded-lg"
+                      className="object-cover rounded-lg group-hover:scale-105 transition duration-300"
                       onClick={() => {
                         setSelectedIndex(index)
                         setZoom(1)
                       }}
                     />
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition z-10" />
+
                     {/* DELETE BUTTON */}
                     <button
-                      onClick={() => handleDeleteImage(img.id, img.image_url)}
-                      className="absolute top-2 right-2 bg-black/60 p-1 rounded-full opacity-0 group-hover:opacity-100 transition"
+                      onClick={() =>
+                        handleDeleteImage(img.id, img.image_url)
+                      }
+                      className="absolute top-2 right-2 z-10 bg-black/70 p-2 rounded-full opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition"
                     >
                       <Trash2 className="text-white w-4 h-4" />
                     </button>
@@ -576,8 +607,8 @@ export default function ProfileEditPage() {
 
           {/* SAVE BUTTON */}
           <div className="mt-8">
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? (
+            <Button type="submit" disabled={isSaving}>
+              {isSaving ? (
                 <>
                   <Loader2 className="animate-spin mr-2" />
                   Saving...
@@ -589,7 +620,11 @@ export default function ProfileEditPage() {
                 </>
               )}
             </Button>
-            <p>If taking more than 3 minutes to save, refresh once.</p>
+            {isSaving && (
+              <p className="text-sm text-muted-foreground mt-2">
+                Please wait while we save your profile...😇
+              </p>
+            )}
           </div>
         </form>
       </motion.div>

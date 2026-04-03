@@ -1,7 +1,7 @@
 // \components\vendors-filter.tsx
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -67,7 +67,7 @@ export function VendorsFilter({
   const hasFilters = category || city || minBudget || maxBudget
 
   // ✅ FIXED: Prevent re-render causing keyboard close
-  const FilterContent = useMemo(() => (
+  const FilterContent = useCallback(() => (
     <FieldGroup className="gap-4">
       <Field>
         <FieldLabel>Category</FieldLabel>
@@ -94,6 +94,8 @@ export function VendorsFilter({
         <div className="relative">
           <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
+            inputMode='text'
+            autoComplete='off'
             placeholder="Enter city (e.g., Bhopal, Indore)"
             value={city}
             onChange={(e) => setCity(e.target.value)}
@@ -237,7 +239,7 @@ export function VendorsFilter({
             </SheetHeader>
 
             <div className="py-4">
-              {FilterContent}
+              {FilterContent()}
             </div>
           </SheetContent>
         </Sheet>

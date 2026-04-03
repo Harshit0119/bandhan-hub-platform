@@ -54,8 +54,8 @@ export function Navbar({ transparent = false }: NavbarProps) {
             <Image
               src="/bandhan-hublogo.png" 
               alt="BandhanHub Logo"
-             className="object-contain"
-              width={190}
+             className="object-contain -ml-10"
+              width={240}
               height={50}
             />
           </Link>
@@ -206,7 +206,7 @@ export function Navbar({ transparent = false }: NavbarProps) {
                     <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
                       <Button variant="outline" className="w-full">Login</Button>
                     </Link>
-                    <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
+                    <Link href="/signup?vendor=true" onClick={() => setMobileMenuOpen(false)}>
                       <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
                         Join as Vendor
                       </Button>

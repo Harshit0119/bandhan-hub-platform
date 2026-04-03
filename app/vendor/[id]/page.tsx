@@ -129,7 +129,7 @@ function VendorProfileContent({ vendor, setVendor }: VendorProfileContentProps) 
         {/* Cover Image */}
         <div className="relative h-64 md:h-80 lg:h-96">
           <Image
-            src={vendor.coverImage}
+            src={vendor.coverImage || '/placeholder.jpg'}
             alt={`${vendor.name} cover`}
             fill
             className="object-cover"
@@ -162,7 +162,7 @@ function VendorProfileContent({ vendor, setVendor }: VendorProfileContentProps) 
                 <div className="shrink-0 -mt-20 md:-mt-16">
                   <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-2xl overflow-hidden border-4 border-card shadow-lg">
                     <Image
-                      src={vendor.profileImage}
+                      src={vendor.profileImage || '/placeholder.jpg'}
                       alt={vendor.name}
                       fill
                       className="object-cover"
@@ -228,7 +228,7 @@ function VendorProfileContent({ vendor, setVendor }: VendorProfileContentProps) 
                   <div className="mt-4 p-4 bg-secondary/50 rounded-lg inline-block">
                     <span className="text-sm text-muted-foreground">Starting from</span>
                     <div className="text-xl font-bold text-primary">
-                      {formatPrice(vendor.minPrice)} - {formatPrice(vendor.maxPrice)}
+                      {formatPrice(vendor.minPrice || 0)} - {formatPrice(vendor.maxPrice || 0)}
                     </div>
                   </div>
                 </div>
@@ -300,7 +300,7 @@ function VendorProfileContent({ vendor, setVendor }: VendorProfileContentProps) 
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {vendor.gallery.map((image, index) => (
+                    {vendor.gallery?.map((image, index) => (
                       <motion.div
                         key={index}
                         initial={{ opacity: 0, scale: 0.9 }}
@@ -333,7 +333,7 @@ function VendorProfileContent({ vendor, setVendor }: VendorProfileContentProps) 
                   <CardTitle>Services & Pricing</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {vendor.services.map((service) => (
+                  {vendor.services?.map((service) => (
                     <div
                       key={service.id}
                       className="p-4 bg-secondary/30 rounded-lg border border-border"
@@ -344,7 +344,7 @@ function VendorProfileContent({ vendor, setVendor }: VendorProfileContentProps) 
                           <p className="text-sm text-muted-foreground mt-1">{service.description}</p>
                         </div>
                         <div className="text-right shrink-0">
-                          <div className="font-bold text-primary">{formatPrice(service.price)}</div>
+                          <div className="font-bold text-primary">{formatPrice(service.price || 0)}</div>
                           <span className="text-xs text-muted-foreground capitalize">{service.priceType}</span>
                         </div>
                       </div>
@@ -481,6 +481,19 @@ function VendorProfileContent({ vendor, setVendor }: VendorProfileContentProps) 
               ✕
             </button>
 
+
+            {/* IMAGE */}
+            <div
+              className="flex items-center justify-center w-full h-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={vendor.gallery?.[selectedIndex]}
+                className="max-h-[90%] max-w-[90%]"
+                style={{ transform: `scale(${zoom})` }}
+              />
+            </div>
+
             {/* PREV */}
             <button
               className="absolute left-4 text-white text-4xl"
@@ -493,18 +506,6 @@ function VendorProfileContent({ vendor, setVendor }: VendorProfileContentProps) 
             >
               ‹
             </button>
-
-            {/* IMAGE */}
-            <div
-              className="flex items-center justify-center w-full h-full"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <img
-                src={vendor.gallery[selectedIndex]}
-                className="max-h-[90%] max-w-[90%]"
-                style={{ transform: `scale(${zoom})` }}
-              />
-            </div>
 
             {/* NEXT */}
             <button
