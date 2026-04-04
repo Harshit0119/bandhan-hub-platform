@@ -141,7 +141,7 @@ function VendorsContent() {
                           </div> */}
 
                           {/* 💎 SLIGHT GLOW */}
-                          <div className="rounded-xl border border-primary/30 shadow-md hover:shadow-lg transition">
+                          <div className="rounded-xl border shadow-md hover:shadow-green-500 transition border-amber-300">
                             <VendorCard vendor={vendor} index={index} />
                           </div>
                         </div>
@@ -163,6 +163,10 @@ function VendorsContent() {
                 )}
 
                 {/* 🔥 MAIN GRID */}
+                <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-2xl font-bold flex items-center gap-2">
+                        🔥 All Vendors
+                      </h2></div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {(category || city ? vendors : free).map((vendor, index) => (
                     <VendorCard key={vendor.id} vendor={vendor} index={index} />
