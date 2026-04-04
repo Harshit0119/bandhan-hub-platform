@@ -27,7 +27,7 @@ import { Loader2, Mail } from 'lucide-react'
 const sidebarLinks = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Profile', href: '/dashboard/profile', icon: User },
-   { name: 'Inquiries', href: '/dashboard/inquiries', icon: Mail }, 
+  { name: 'Inquiries', href: '/dashboard/inquiries', icon: Mail },
   { name: 'Services & Pricing', href: '/dashboard/services', icon: Package },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { name: 'Subscription', href: '/dashboard/subscription', icon: CreditCard },
@@ -48,6 +48,8 @@ function DashboardSidebar({ className }: { className?: string }) {
             className="h-35 mb-0 -ml-1=5"
             width={210}
             height={1}
+            placeholder="blur"
+            blurDataURL="/blur.png"
           />
         </Link>
       </div>
@@ -138,7 +140,9 @@ export default function DashboardLayout({
               alt="BandhanHub Logo"
               className="h-29 -ml-10"
               width={210}
-              height={1}    
+              height={1}
+              placeholder="blur"
+              blurDataURL="/blur.png"
             />
           </Link>
 

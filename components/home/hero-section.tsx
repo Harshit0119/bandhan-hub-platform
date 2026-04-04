@@ -1,17 +1,11 @@
+//components\home\hero-section.tsx
 'use client'
 
-import { useEffect, useState } from "react";
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 
 export function HeroSection() {
-  const [isMobile, setIsMobile] = useState(false)
-
-  useEffect(() => {
-    setIsMobile(window.innerWidth < 768)
-  }, [])
-
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
 
@@ -22,20 +16,19 @@ export function HeroSection() {
           alt="Wedding background"
           fill
           priority
+          sizes="100vw" // ✅ VERY IMPORTANT (LCP FIX)
           quality={60}
-          className="w-full h-full object-cover filter brightness-44"
+          className="object-cover brightness-120"
+          placeholder="blur"
+          blurDataURL="/blur.png"
         />
+
         {/* 🌫 GRADIENT OVERLAY */}
-        <div className="absolute inset-0 bg-linear-b from-black/90 via-black/90 to-black/90" />
+        <div className="absolute inset-0 bg-black/70" />
       </div>
 
       {/* 🧠 CONTENT */}
-      <div className="relative z-20 text-center px-4 max-w-4xl animate-fade-in">
-        {/* <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        > */}
+      <div className="relative z-20 text-center px-4 max-w-4xl">
 
         <span className="inline-block px-4 py-2 mb-6 text-sm text-[#D4AF37] border border-[#D4AF37]/30 rounded-full bg-black/40 backdrop-blur">
           India&apos;s Premier Wedding Vendor Platform
@@ -51,7 +44,7 @@ export function HeroSection() {
           Find trusted vendors for your perfect wedding — photographers, decorators & more.
         </p>
 
-        {/* 🔥 BUTTONS FIXED */}
+        {/* 🔥 BUTTONS */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
 
           <Link href="/vendors">
@@ -90,7 +83,6 @@ export function HeroSection() {
           </div>
         </div>
 
-        {/* </motion.div> */}
       </div>
 
     </section>

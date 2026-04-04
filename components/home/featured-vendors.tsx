@@ -11,7 +11,7 @@ import { supabase } from '@/lib/supabase'
 import { formatVendors } from '@/lib/formatVendors' // ✅ FIXED
 import { Vendor } from '@/lib/types'
 
-export function FeaturedVendors() {
+export default function FeaturedVendors() {
   const [vendors, setVendors] = useState<Vendor[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -76,7 +76,7 @@ export function FeaturedVendors() {
             {[...Array(4)].map((_, i) => (
               <div
                 key={i}
-                className="h-220px md:h-260px bg-muted animate-pulse rounded-xl"
+                className="h-[220px] md:h-[260px] bg-muted animate-pulse rounded-xl"
               />
             ))}
           </div>

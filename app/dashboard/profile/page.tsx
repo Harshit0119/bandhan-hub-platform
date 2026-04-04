@@ -360,6 +360,8 @@ export default function ProfileEditPage() {
                       alt="Cover"
                       fill
                       className="object-cover"
+                      placeholder="blur"
+                      blurDataURL="/blur.png"
                     />
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
                       <Camera className="text-white" />
@@ -377,6 +379,8 @@ export default function ProfileEditPage() {
                       fill
                       className="object-cover"
                       sizes="(max-width: 768px) 100vw, 300px"
+                      placeholder="blur"
+                      blurDataURL="/blur.png"
                     />
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
                       <Camera className="text-white" />
@@ -571,6 +575,8 @@ export default function ProfileEditPage() {
                       alt="gallery"
                       fill
                       className="object-cover rounded-lg group-hover:scale-105 transition duration-300"
+                      placeholder="blur"
+                      blurDataURL="/blur.png"
                       onClick={() => {
                         setSelectedIndex(index)
                         setZoom(1)

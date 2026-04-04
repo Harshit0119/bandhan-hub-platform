@@ -57,6 +57,8 @@ export function TestimonialsSection() {
                     alt={testimonial.name}
                     fill
                     className="object-cover"
+                    placeholder="blur"
+                    blurDataURL="/blur.png"
                   />
                 </div>
                 <div>

@@ -133,6 +133,8 @@ function VendorProfileContent({ vendor, setVendor }: VendorProfileContentProps) 
             alt={`${vendor.name} cover`}
             fill
             className="object-cover"
+            placeholder="blur"
+            blurDataURL="/blur.png"
           />
           <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-transparent" />
 
@@ -166,6 +168,8 @@ function VendorProfileContent({ vendor, setVendor }: VendorProfileContentProps) 
                       alt={vendor.name}
                       fill
                       className="object-cover"
+                      placeholder="blur"
+                      blurDataURL="/blur.png"
                     />
                   </div>
                 </div>
@@ -318,6 +322,8 @@ function VendorProfileContent({ vendor, setVendor }: VendorProfileContentProps) 
                           alt={`Gallery ${index + 1}`}
                           fill
                           className="object-cover"
+                          placeholder="blur"
+                          blurDataURL="/blur.png"
                         />
                       </motion.div>
                     ))}

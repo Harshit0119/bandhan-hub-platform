@@ -67,19 +67,20 @@ function VendorCardComponent({ vendor, index = 0 }: VendorCardProps) {
         className="group overflow-hidden cursor-pointer transition-all duration-300 border-border bg-card hover:shadow-lg active:scale-[0.98]"
       >
         {/* IMAGE */}
-        <div className="relative w-full aspect-4/3 overflow-hidden bg-muted">
+        <div className="relative w-full h-[220px] md:h-[260px] overflow-hidden bg-muted">
           <Image
             src={
               imgError
-                ? '/placeholder.png'
-                : vendor.profileImage || '/placeholder.png'
+                ? '/placeholder.webp'
+                : `${vendor.profileImage}?width=400&quality=40&format=webp`
             }
             alt={vendor.name || 'Vendor'}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            quality={40}
+            loading={index < 2 ? 'eager' : 'lazy'} // ✅ better than priority
             className="object-cover transition-transform duration-500 group-hover:scale-105"
             onError={() => setImgError(true)}
-            priority={index < 2} // 🚀 only first 2 preload
           />
 
           {/* Overlay */}

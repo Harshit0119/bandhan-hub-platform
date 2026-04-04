@@ -85,6 +85,8 @@ export default function LoginPage() {
                 className="h-35"
                 width={260}
                 height={10}
+                placeholder="blur"
+                blurDataURL="/blur.png"
               />
             </Link>
             <CardTitle className="text-2xl font-serif">Welcome Back</CardTitle>

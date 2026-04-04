@@ -58,6 +58,8 @@ export function Navbar({ transparent = false }: NavbarProps) {
               className="object-contain -ml-10"
               width={240}
               height={50}
+              placeholder="blur"
+              blurDataURL="/blur.png"
             />
           </Link>
 

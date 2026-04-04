@@ -102,8 +102,10 @@ function SignupForm() {
                 src="/bandhan-hublogo.png"
                 alt="BandhanHub Logo"
                 className="h-35"
-                width={260} 
+                width={260}
                 height={10}
+                placeholder="blur"
+                blurDataURL="/blur.png"
               />
             </Link>
             <CardTitle className="text-2xl font-serif">Create Account</CardTitle>

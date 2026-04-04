@@ -337,6 +337,8 @@ export default function DashboardPage() {
                               alt={vendor.name}
                               fill
                               className="object-cover"
+                              placeholder="blur"
+                              blurDataURL="/blur.png"
                             />
                           </div>
                           <div className="flex-1">
