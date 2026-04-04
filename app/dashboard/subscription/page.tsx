@@ -11,6 +11,22 @@ import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
 
+/* ✅ Razorpay loader (FIX) */
+const loadRazorpay = () => {
+  return new Promise<boolean>((resolve) => {
+    if (typeof window !== "undefined" && (window as any).Razorpay) {
+      resolve(true)
+      return
+    }
+
+    const script = document.createElement("script")
+    script.src = "https://checkout.razorpay.com/v1/checkout.js"
+    script.onload = () => resolve(true)
+    script.onerror = () => resolve(false)
+    document.body.appendChild(script)
+  })
+}
+
 const plans = [
   {
     id: 'free',
@@ -97,6 +113,14 @@ export default function SubscriptionPage() {
     setIsLoading(planId)
 
     try {
+      /* ✅ Load Razorpay dynamically */
+      const isLoaded = await loadRazorpay()
+
+      if (!isLoaded) {
+        toast.error("Payment system failed to load. Try again.")
+        return
+      }
+
       const res = await fetch('/api/razorpay/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -104,6 +128,10 @@ export default function SubscriptionPage() {
       })
 
       const order = await res.json()
+
+      if(!order?.id){
+        throw new Error("Order creation failed")
+      }
 
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
@@ -116,6 +144,7 @@ export default function SubscriptionPage() {
         order_id: order.id,
 
         handler: async function (response: any) {
+          try {
           await fetch('/api/razorpay/verify-payment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -128,7 +157,11 @@ export default function SubscriptionPage() {
 
           toast.success("Payment successful 🎉")
           window.location.reload()
-        },
+        } catch (err){
+          console.error(err)
+          toast.error("Verification failed")
+        }
+      },
 
         prefill: {
           name: user?.name,
@@ -136,7 +169,12 @@ export default function SubscriptionPage() {
         },
       }
 
-      const rzp = new (window as any).Razorpay(options)
+      const Razorpay = (window as any).Razorpay
+      const rzp = new Razorpay(options)
+      rzp.on("payment.failed", function (){
+        toast.error("Payment failed.Try again.")
+      })
+
       rzp.open()
 
     } catch (err) {

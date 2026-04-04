@@ -2,9 +2,8 @@
 
 import Image from 'next/image'
 import { Star, Quote } from 'lucide-react'
-import { mockTestimonials } from '@/lib/mock-data'
 import { motion } from 'framer-motion'
-
+import { mockTestimonials } from '@/lib/mock-data'
 export function TestimonialsSection() {
   return (
     <section className="py-20 bg-primary/5">

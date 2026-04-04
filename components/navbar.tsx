@@ -147,6 +147,7 @@ export function Navbar({ transparent = false }: NavbarProps) {
 
           {/* Mobile Menu Button */}
           <button
+            aria-label="Open menu"
             className="lg:hidden p-2"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >

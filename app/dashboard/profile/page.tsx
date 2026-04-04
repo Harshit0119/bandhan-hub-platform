@@ -579,7 +579,7 @@ export default function ProfileEditPage() {
                     <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition z-10" />
 
                     {/* DELETE BUTTON */}
-                    <button
+                    <button aria-label="Open menu"
                       onClick={() =>
                         handleDeleteImage(img.id, img.image_url)
                       }
@@ -639,7 +639,7 @@ export default function ProfileEditPage() {
           <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
 
             {/* CLOSE BUTTON */}
-            <button
+            <button aria-label="Open menu"
               className="absolute top-4 right-4 text-white text-3xl"
               onClick={() => setSelectedIndex(null)}
             >
@@ -647,7 +647,7 @@ export default function ProfileEditPage() {
             </button>
 
             {/* PREVIOUS */}
-            <button
+            <button aria-label="Open menu"
               className="absolute left-4 text-white text-4xl"
               onClick={() =>
                 setSelectedIndex((prev) =>
@@ -672,7 +672,7 @@ export default function ProfileEditPage() {
             </div>
 
             {/* NEXT */}
-            <button
+            <button aria-label="Open menu"
               className="absolute right-4 text-white text-4xl"
               onClick={() =>
                 setSelectedIndex((prev) =>
@@ -685,13 +685,13 @@ export default function ProfileEditPage() {
 
             {/* ZOOM CONTROLS */}
             <div className="absolute bottom-6 flex gap-4">
-              <button
+              <button aria-label="Open menu"
                 className="bg-white px-3 py-1 rounded"
                 onClick={() => setZoom((z) => Math.max(1, z - 0.5))}
               >
                 -
               </button>
-              <button
+              <button aria-label="Open menu"
                 className="bg-white px-3 py-1 rounded"
                 onClick={() => setZoom((z) => z + 0.5)}
               >

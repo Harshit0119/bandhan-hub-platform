@@ -48,13 +48,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link
+          rel="preconnect"
+          href="https://ujspkyagiyezehdlxdsw.supabase.co"
+        />
+      </head>
       <body className={`${playfair.variable} ${lato.variable} font-sans antialiased overflow-x-hidden`}
       >
-        {/* ✅ Load Razorpay AFTER page load (performance fix) */}
-        <Script
-          src="https://checkout.razorpay.com/v1/checkout.js"
-          strategy="lazyOnload"
-        />
 
         {/* ✅ Auth wrapper */}
         <AuthProvider>

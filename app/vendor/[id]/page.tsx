@@ -474,7 +474,7 @@ function VendorProfileContent({ vendor, setVendor }: VendorProfileContentProps) 
             onClick={() => setSelectedIndex(null)}
           >
             {/* CLOSE */}
-            <button
+            <button aria-label="Open menu"
               className="absolute top-4 right-4 text-white text-3xl"
               onClick={() => setSelectedIndex(null)}
             >
@@ -495,7 +495,7 @@ function VendorProfileContent({ vendor, setVendor }: VendorProfileContentProps) 
             </div>
 
             {/* PREV */}
-            <button
+            <button aria-label="Open menu"
               className="absolute left-4 text-white text-4xl"
               onClick={(e) => {
                 e.stopPropagation()
@@ -508,7 +508,7 @@ function VendorProfileContent({ vendor, setVendor }: VendorProfileContentProps) 
             </button>
 
             {/* NEXT */}
-            <button
+            <button aria-label="Open menu"
               className="absolute right-4 text-white text-4xl"
               onClick={(e) => {
                 e.stopPropagation()
@@ -522,7 +522,7 @@ function VendorProfileContent({ vendor, setVendor }: VendorProfileContentProps) 
 
             {/* ZOOM */}
             <div className="absolute bottom-6 flex gap-4">
-              <button
+              <button aria-label="Open menu"
                 className="bg-white px-3 py-1 rounded"
                 onClick={(e) => {
                   e.stopPropagation()
@@ -531,7 +531,7 @@ function VendorProfileContent({ vendor, setVendor }: VendorProfileContentProps) 
               >
                 -
               </button>
-              <button
+              <button aria-label="Open menu"
                 className="bg-white px-3 py-1 rounded"
                 onClick={(e) => {
                   e.stopPropagation()
