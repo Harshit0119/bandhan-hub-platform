@@ -8,7 +8,6 @@ import { useAuth } from '@/lib/auth-context'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -187,7 +186,9 @@ export function Navbar({ transparent = false }: NavbarProps) {
 
               <div className="border-t border-border pt-4 flex flex-col gap-2">
                 {user ? (
-                  <>
+                  <div>
+                    <div className="flex justify-center">
+                    </div>
                     <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
                       <Button variant="outline" className="w-full justify-start gap-2">
                         <LayoutDashboard className="h-4 w-4" />
@@ -207,7 +208,7 @@ export function Navbar({ transparent = false }: NavbarProps) {
                       <LogOut className="h-4 w-4" />
                       Logout
                     </Button>
-                  </>
+                  </div>
                 ) : (
                   <>
                     <Link href="/login" onClick={() => setMobileMenuOpen(false)}>

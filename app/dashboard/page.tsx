@@ -182,7 +182,6 @@ export default function DashboardPage() {
   return (
     <div className="p-6 lg:p-8">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-
         {/* HEADER */}
         <div className="mb-8">
           <h1 className="font-serif text-3xl font-bold text-foreground">

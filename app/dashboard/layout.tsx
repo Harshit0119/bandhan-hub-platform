@@ -17,12 +17,14 @@ import {
   CreditCard,
   LogOut,
   Menu,
-  X
+  X,
+  Bell
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Loader2, Mail } from 'lucide-react'
+import { NotificationBell } from '@/components/notification-bell'
 
 const sidebarLinks = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -40,7 +42,7 @@ function DashboardSidebar({ className }: { className?: string }) {
   return (
     <div className={cn("flex flex-col h-full", className)}>
       {/* Logo */}
-      <div className="p-6 border-b border-border">
+      <div className="p-4 border-b border-border">
         <Link href="/" className="flex items-center gap-2">
           <Image
             src="/bandhan-hublogo.png"
@@ -125,44 +127,61 @@ export default function DashboardLayout({
   }
 
   return (
-    <FavoritesProvider>
-      <div className="min-h-screen flex bg-background">
-        {/* Desktop Sidebar */}
-        <aside className="hidden lg:block w-64 bg-card border-r border-border">
-          <DashboardSidebar />
-        </aside>
+    <div>
+      <FavoritesProvider>
+        <div className="min-h-screen flex bg-background">
+          {/* Desktop Sidebar */}
+          <aside className="hidden lg:block w-64 bg-card border-r border-border">
+            <DashboardSidebar />
+          </aside>
+          {/* RIGHT SIDE */}
+          <div className="flex-1 flex flex-col">
 
-        {/* Mobile Header */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-card border-b border-border z-50 flex items-center justify-between px-4">
-          <Link href="/" className="flex items-center gap-2 justify-center">
-            <Image
-              src="/bandhan-hublogo.png"
-              alt="BandhanHub Logo"
-              className="h-29 -ml-10"
-              width={210}
-              height={1}
-              placeholder="blur"
-              blurDataURL="/blur.png"
-            />
-          </Link>
+            {/* ✅ DESKTOP TOP BAR */}
+            <div className="hidden lg:flex items-center justify-end h-16 px-6 border-b border-border bg-card">
+              <NotificationBell />
+            </div>
 
-          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-64">
-              <DashboardSidebar />
-            </SheetContent>
-          </Sheet>
+            {/* ✅ MOBILE HEADER */}
+            <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-card border-b border-border z-50 flex items-center justify-between px-4">
+
+              {/* LEFT: MENU */}
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                  </Button>
+                </SheetTrigger>
+
+                <SheetContent side="left" className="p-0 w-64">
+                  <DashboardSidebar />
+                </SheetContent>
+              </Sheet>
+
+              {/* CENTER: LOGO */}
+              <Link href="/" className="flex items-center justify-center">
+                <Image
+                  src="/bandhan-hublogo.png"
+                  alt="BandhanHub Logo"
+                  className="h-29 -ml-10"
+                  width={210}
+                  height={1}
+                  placeholder="blur"
+                  blurDataURL="/blur.png"
+                />
+              </Link>
+
+              {/* RIGHT: BELL */}
+              <NotificationBell />
+            </div>
+
+            {/* ✅ MAIN CONTENT */}
+            <main className="flex-1 lg:pt-0 pt-16">
+              {children}
+            </main>
+          </div>
         </div>
-
-        {/* Main Content */}
-        <main className="flex-1 lg:pt-0 pt-16">
-          {children}
-        </main>
-      </div>
-    </FavoritesProvider>
+      </FavoritesProvider >
+    </div>
   )
 }
