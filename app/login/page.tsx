@@ -82,8 +82,8 @@ export default function LoginPage() {
               <Image
                 src="/bandhan-hublogo.png"
                 alt="BandhanHub Logo"
-                className="h-35"
-                width={260}
+                className="h-25"
+                width={150}
                 height={10}
                 placeholder="blur"
                 blurDataURL="/blur.png"

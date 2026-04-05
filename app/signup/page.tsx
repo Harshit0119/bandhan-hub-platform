@@ -101,8 +101,8 @@ function SignupForm() {
               <Image
                 src="/bandhan-hublogo.png"
                 alt="BandhanHub Logo"
-                className="h-35"
-                width={260}
+                className="h-28"
+                width={190}
                 height={10}
                 placeholder="blur"
                 blurDataURL="/blur.png"

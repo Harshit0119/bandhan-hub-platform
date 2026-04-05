@@ -6,7 +6,6 @@ import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/lib/auth-context'
 import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
-import Script from 'next/script'
 
 const playfair = Playfair_Display({
   subsets: ['latin'],

@@ -46,8 +46,10 @@ export async function POST(req: Request) {
       
       <!-- HEADER -->
       <div style="background:#8B0000;color:#ffffff;padding:20px;text-align:center;">
-        <h1 style="margin:0;font-size:22px;">BandhanHub</h1>
-        <p style="margin:5px 0 0;font-size:13px;">You’ve got a new inquiry 🎉</p>
+      <img src="https://v0-bandhan-hub-saa-s-platform.vercel.app/bandhan-hublogo.png" height="200" width="450" />
+        <h1>Hello ${vendor.name || "vendor"},</h1>
+
+        <p style="margin:5px 0 0;font-size:20px;">You’ve got a new inquiry 🎉</p>
       </div>
 
       <!-- BODY -->

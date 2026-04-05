@@ -143,7 +143,7 @@ export default function DashboardLayout({
             </div>
 
             {/* ✅ MOBILE HEADER */}
-            <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-card border-b border-border z-50 flex items-center justify-between px-4">
+            <div className="lg:hidden fixed top-0 left-0 right-0 h-20 bg-card border-b border-border z-50 flex items-center justify-between px-4">
 
               {/* LEFT: MENU */}
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -163,8 +163,8 @@ export default function DashboardLayout({
                 <Image
                   src="/bandhan-hublogo.png"
                   alt="BandhanHub Logo"
-                  className="h-29 -ml-10"
-                  width={210}
+                  className="h-20"
+                  width={230}
                   height={1}
                   placeholder="blur"
                   blurDataURL="/blur.png"

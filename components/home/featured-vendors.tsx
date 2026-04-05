@@ -76,7 +76,7 @@ export default function FeaturedVendors() {
             {[...Array(4)].map((_, i) => (
               <div
                 key={i}
-                className="h-[260px] md:h-[260px] bg-muted animate-pulse rounded-xl"
+                className="h-55 md:h-62.5 bg-muted animate-pulse rounded-xl"
               />
             ))}
           </div>
