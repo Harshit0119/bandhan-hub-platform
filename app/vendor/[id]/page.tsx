@@ -439,6 +439,20 @@ function VendorProfileContent({ vendor, setVendor }: VendorProfileContentProps) 
                               message: inquiryData.message,
                             })
 
+                            // ✅ SEND EMAIL
+                            await fetch("/api/send-inquiry-email", {
+                              method: "POST",
+                              headers: {
+                                "Content-Type": "application/json",
+                              },
+                              body: JSON.stringify({
+                                vendorId: vendor.id,
+                                name: inquiryData.name,
+                                phone: inquiryData.phone,
+                                message: inquiryData.message,
+                              }),
+                            })
+
                             toast.success("Inquiry sent successfully!")
 
                             setInquiryData({

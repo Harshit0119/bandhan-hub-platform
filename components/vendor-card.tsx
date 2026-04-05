@@ -67,7 +67,7 @@ function VendorCardComponent({ vendor, index = 0 }: VendorCardProps) {
         className="group overflow-hidden cursor-pointer transition-all duration-300 border-border bg-card hover:shadow-lg active:scale-[0.98]"
       >
         {/* IMAGE */}
-        <div className="relative w-full h-[220px] md:h-[260px] overflow-hidden bg-muted">
+        <div className="relative w-full h-[250px] md:h-[260px] overflow-hidden bg-muted">
           <Image
             src={
               imgError
