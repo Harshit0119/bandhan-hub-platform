@@ -68,14 +68,13 @@ function SignupForm() {
     setIsLoading(true)
 
     try {
-      const res = await signup(email, password, name, activeTab === 'vendor')
+      await signup(email, password, name, activeTab === 'vendor')
 
-      toast.success('Account created successfully!')
-      if (activeTab === 'vendor') {
-        router.push('/dashboard')
-      } else {
-        router.push('/vendors')
-      }
+      // ✅ NEW FLOW
+      toast.success("Account created! Check your email to verify 📩")
+
+      router.push('/verify-email')
+
     } catch (err: any) {
       console.error(err)
       toast.error(err.message || 'Signup failed')
