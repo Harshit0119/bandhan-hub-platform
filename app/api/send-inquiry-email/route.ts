@@ -36,18 +36,54 @@ export async function POST(req: Request) {
     }
 
     await resend.emails.send({
-      from: "BandhanHub <onboarding@resend.dev>", // temp
-      to: "bandhanhub@gmail.com",
+      from: "BandhanHub <onboarding@resend.dev>", //"BandhanHub <noreply@bandhanhub.com>" -- > change to this when have domain.
+      to: "bandhanhub@gmail.com", //email,--->do this when domain.
       subject: "New Inquiry Received 🎉",
       html: `
-        <h2>New Inquiry on BandhanHub</h2>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Phone:</strong> ${phone}</p>
-        <p><strong>Message:</strong> ${message}</p>
-        <br/>
-        <a href="https://v0-bandhan-hub-saa-s-platform.vercel.app/dashboard/inquiries">
-          View in Dashboard
-        </a>
+        <div style="font-family: Arial, sans-serif; background:#f9fafb; padding:20px;">
+    
+    <div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+      
+      <!-- HEADER -->
+      <div style="background:#8B0000;color:#ffffff;padding:20px;text-align:center;">
+        <h1 style="margin:0;font-size:22px;">BandhanHub</h1>
+        <p style="margin:5px 0 0;font-size:13px;">You’ve got a new inquiry 🎉</p>
+      </div>
+
+      <!-- BODY -->
+      <div style="padding:20px;">
+        <h2 style="margin-top:0;color:#111;">New Inquiry Received</h2>
+        
+        <p style="color:#555;font-size:14px;">
+          A user has shown interest in your services. Here are the details:
+        </p>
+
+        <div style="margin:15px 0;padding:15px;background:#f3f4f6;border-radius:8px;">
+          <p style="margin:5px 0;"><strong>Name:</strong> ${name}</p>
+          <p style="margin:5px 0;"><strong>Phone:</strong> ${phone}</p>
+          <p style="margin:5px 0;"><strong>Message:</strong> ${message || "N/A"}</p>
+        </div>
+
+        <!-- CTA BUTTON -->
+        <div style="text-align:center;margin-top:20px;">
+          <a href="https://v0-bandhan-hub-saa-s-platform.vercel.app/dashboard/inquiries"
+             style="background:#8B0000;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">
+             View Inquiry
+          </a>
+        </div>
+
+        <p style="margin-top:20px;font-size:12px;color:#888;">
+          Tip: Respond quickly to increase your chances of getting booked 🚀
+        </p>
+      </div>
+
+      <!-- FOOTER -->
+      <div style="background:#f3f4f6;padding:15px;text-align:center;font-size:12px;color:#666;">
+        © ${new Date().getFullYear()} BandhanHub. All rights reserved.
+      </div>
+
+    </div>
+  </div>
       `,
     });
 
