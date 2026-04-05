@@ -37,7 +37,7 @@ export async function POST(req: Request) {
 
     await resend.emails.send({
       from: "BandhanHub <onboarding@resend.dev>", // temp
-      to: email,
+      to: "bandhanhub@gmail.com",
       subject: "New Inquiry Received 🎉",
       html: `
         <h2>New Inquiry on BandhanHub</h2>
