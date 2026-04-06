@@ -137,7 +137,7 @@ export function Navbar({ transparent = false }: NavbarProps) {
                     Login
                   </Button>
                 </Link>
-                <Link href="/signup">
+                <Link href="/signup?vendor=true">
                   <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
                     Join as Vendor
                   </Button>
