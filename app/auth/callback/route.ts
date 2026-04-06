@@ -17,12 +17,14 @@ export async function GET(request: Request) {
   // ✅ FIX: destructure properly
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-  if (error || !data.session) {
+  if (error) {
     console.error("Auth error:", error);
     return NextResponse.redirect(`${origin}/login`);
   }
 
-  const user = data.user;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) {
     return NextResponse.redirect(`${origin}/login`);
