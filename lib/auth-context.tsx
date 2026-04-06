@@ -142,34 +142,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     if (error) throw error
-
-    const user = data.user
-    if (!user) return data
-
-    // 2. Wait a bit (important for Supabase sync)
-    await new Promise((res) => setTimeout(res, 500))
-
-    // 3. Create profile manually (SAFE)
-    await supabase.from('profiles').upsert({
-      id: user.id,
-      name,
-      is_vendor: isVendor,
-    })
-
-    // 4. ✅ Create vendor row if vendor
-    if (isVendor) {
-      await supabase.from('vendors').upsert({
-        user_id: user.id,
-        name: '',
-        category: '',
-        city: '',
-        experience: '',
-        about: '',
-        min_price: 0,
-        max_price: 0,
-      })
-    }
-
     return data
   }
 
