@@ -45,11 +45,17 @@ export async function POST(req: Request) {
     <div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
       
       <!-- HEADER -->
-      <div style="background:#8B0000;color:#ffffff;padding:20px;text-align:center;">
-      <img src="https://v0-bandhan-hub-saa-s-platform.vercel.app/bandhan-hublogo.png" height="200" width="450" />
-        <h1>Hello ${vendor.name || "vendor"},</h1>
+      <div style="background:#8B0000;color:#ffffff;padding:24px 16px;text-align:center;">
+      <img 
+  src="https://v0-bandhan-hub-saa-s-platform.vercel.app/bandhan-hublogo.png" 
+  alt="BandhanHub"
+  style="max-width:160px;width:100%;height:auto;display:block;margin:0 auto 10px;"
+/>
+        <h1 style="margin:10px 0 5px;font-size:20px;font-weight:600;">
+        Hello ${vendor.name || "vendor"},
+        </h1>
 
-        <p style="margin:5px 0 0;font-size:20px;">You’ve got a new inquiry 🎉</p>
+        <p style="margin:0;font-size:14px;opaciity:0.9">You’ve got a new inquiry 🎉</p>
       </div>
 
       <!-- BODY -->
