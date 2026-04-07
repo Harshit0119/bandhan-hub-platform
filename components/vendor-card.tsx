@@ -68,17 +68,12 @@ function VendorCardComponent({ vendor, index = 0 }: VendorCardProps) {
       >
         {/* IMAGE */}
         <div className="relative w-full h-62.5 md:h-62.5 overflow-hidden bg-muted">
-          <Image
-            src={
-              imgError
-                ? '/placeholder.webp'
-                : `${vendor.profileImage}?width=400&quality=40&format=webp`
-            }
+          <Image src={imgError ? '/placeholder.webp' : vendor.profileImage || 'placeholder.webp'}
             alt={vendor.name || 'Vendor'}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            quality={40}
-            loading={index < 2 ? 'eager' : 'lazy'} // ✅ better than priority
+            loading="lazy"
+            quality={60} // 🔥 control quality here
             className="object-cover transition-transform duration-500 group-hover:scale-105"
             onError={() => setImgError(true)}
           />

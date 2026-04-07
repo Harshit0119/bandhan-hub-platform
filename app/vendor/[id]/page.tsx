@@ -55,6 +55,7 @@ function VendorProfileContent({ vendor, setVendor }: VendorProfileContentProps) 
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [zoom, setZoom] = useState(1)
+  const gallery = vendor.gallery || []
 
   useEffect(() => {
     if (!vendor?.id) return
@@ -520,7 +521,7 @@ function VendorProfileContent({ vendor, setVendor }: VendorProfileContentProps) 
               onClick={(e) => {
                 e.stopPropagation()
                 setSelectedIndex((prev) =>
-                  prev === 0 ? vendor.gallery.length - 1 : (prev as number) - 1
+                  prev === 0 ? gallery.length - 1 : (prev as number) - 1
                 )
               }}
             >
@@ -533,7 +534,7 @@ function VendorProfileContent({ vendor, setVendor }: VendorProfileContentProps) 
               onClick={(e) => {
                 e.stopPropagation()
                 setSelectedIndex((prev) =>
-                  prev === vendor.gallery.length - 1 ? 0 : (prev as number) + 1
+                  prev === gallery.length - 1 ? 0 : (prev as number) + 1
                 )
               }}
             >
