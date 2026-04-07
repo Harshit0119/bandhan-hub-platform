@@ -11,6 +11,7 @@ import { FieldGroup, Field, FieldLabel } from '@/components/ui/field'
 import { Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import Image from 'next/image'
+import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -61,6 +62,23 @@ export default function LoginPage() {
       toast.error('Invalid credentials')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast.error('Enter your email first')
+      return
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`,
+    })
+
+    if (error) {
+      toast.error(error.message)
+    } else {
+      toast.success('Password reset email sent 📩')
     }
   }
 
@@ -139,9 +157,13 @@ export default function LoginPage() {
               </FieldGroup>
 
               <div className="flex justify-end">
-                <Link href="#" className="text-sm text-primary hover:underline">
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="text-sm text-primary hover:underline"
+                >
                   Forgot password?
-                </Link>
+                </button>
               </div>
 
               <Button

@@ -47,7 +47,7 @@ export async function POST(req: Request) {
       <!-- HEADER -->
       <div style="background:#8B0000;color:#ffffff;padding:24px 16px;text-align:center;">
       <img 
-  src="https://v0-bandhan-hub-saa-s-platform.vercel.app/bandhan-hublogo.png" 
+  src="https://bandhan-hub.vercel.app/bandhan-hublogo.png" 
   alt="BandhanHub"
   style="max-width:160px;width:100%;height:auto;display:block;margin:0 auto 10px;"
 />
@@ -74,7 +74,7 @@ export async function POST(req: Request) {
 
         <!-- CTA BUTTON -->
         <div style="text-align:center;margin-top:20px;">
-          <a href="https://v0-bandhan-hub-saa-s-platform.vercel.app/dashboard/inquiries"
+          <a href="https://bandhan-hub.vercel.app/dashboard/inquiries"
              style="background:#8B0000;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">
              View Inquiry
           </a>
