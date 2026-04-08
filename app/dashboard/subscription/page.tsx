@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
+import { useRouter } from 'next/router'
 
 /* ✅ Razorpay loader (FIX) */
 const loadRazorpay = () => {
@@ -97,6 +98,7 @@ export default function SubscriptionPage() {
   const { user } = useAuth()
   const [isLoading, setIsLoading] = useState<string | null>(null)
 
+  const  router = useRouter()
   // ✅ FIX: Read actual plan from DB
   const currentPlan = useMemo(() => {
     if (user?.subscription_plan) return user.subscription_plan // 🔥 MAIN FIX
@@ -124,12 +126,12 @@ export default function SubscriptionPage() {
       const res = await fetch('/api/razorpay/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: planId }),
+        body: JSON.stringify({ plan: planId, userId: user.id }),
       })
 
       const order = await res.json()
 
-      if(!order?.id){
+      if (!order?.id) {
         throw new Error("Order creation failed")
       }
 
@@ -145,23 +147,48 @@ export default function SubscriptionPage() {
 
         handler: async function (response: any) {
           try {
-          await fetch('/api/razorpay/verify-payment', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              ...response,
-              userId: user.id,
-              plan: planId,
-            }),
-          })
+            const controller = new AbortController()
 
-          toast.success("Payment successful 🎉")
-          window.location.reload()
-        } catch (err){
-          console.error(err)
-          toast.error("Verification failed")
-        }
-      },
+            // ⏱ timeout after 8 sec
+            const timeout = setTimeout(() => controller.abort(), 8000)
+
+            const res = await fetch('/api/razorpay/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                ...response,
+                userId: user.id,
+                plan: planId,
+              }),
+              signal: controller.signal,
+            })
+
+            clearTimeout(timeout)
+
+            const data = await res.json()
+
+            if (!res.ok || data.error) {
+              throw new Error(data.error || "Verification failed")
+            }
+
+            toast.success("Payment successful 🎉")
+
+            // ✅ small delay for DB sync
+            setTimeout(() => {
+              window.location.reload()
+            }, 1000)
+
+          } catch (err) {
+            console.error("VERIFY ERROR:", err)
+
+            toast.error("Payment done but verification failed. Refresh page.")
+
+            // ✅ fallback (VERY IMPORTANT)
+            setTimeout(() => {
+              window.location.reload()
+            }, 2000)
+          }
+        },
 
         prefill: {
           name: user?.name,
@@ -171,7 +198,7 @@ export default function SubscriptionPage() {
 
       const Razorpay = (window as any).Razorpay
       const rzp = new Razorpay(options)
-      rzp.on("payment.failed", function (){
+      rzp.on("payment.failed", function () {
         toast.error("Payment failed.Try again.")
       })
 

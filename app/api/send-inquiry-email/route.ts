@@ -1,14 +1,15 @@
 //\app\api\send-inquiry-email\route.ts
+
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
-
-const resend = new Resend(process.env.RESEND_API_KEY!);
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!, // 🔐 SAFE (server only)
 );
+
+const resend = new Resend(process.env.RESEND_API_KEY!);
 
 export async function POST(req: Request) {
   try {
@@ -21,9 +22,10 @@ export async function POST(req: Request) {
       .eq("id", vendorId)
       .single();
 
-    if (!vendor?.user_id) {
+    if (!vendor) {
       return NextResponse.json({ error: "Vendor not found" });
     }
+
     // Step 2: get email from auth.users
     const { data: userData } = await supabase.auth.admin.getUserById(
       vendor.user_id,
@@ -37,7 +39,7 @@ export async function POST(req: Request) {
 
     await resend.emails.send({
       from: "BandhanHub <onboarding@resend.dev>", //"BandhanHub <noreply@bandhanhub.com>" -- > change to this when have domain.
-      to: "bandhanhub@gmail.com", //email,--->do this when domain.
+      to: email,
       subject: "New Inquiry Received 🎉",
       html: `
         <div style="font-family: Arial, sans-serif; background:#f9fafb; padding:20px;">

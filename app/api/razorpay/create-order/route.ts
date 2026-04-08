@@ -9,7 +9,7 @@ const razorpay = new Razorpay({
 
 export async function POST(req: Request) {
   try {
-    const { plan } = await req.json()
+    const { plan, userId } = await req.json()
 
     const amountMap: Record<string, number> = {
       premium: 19900, // ₹199 in paise
@@ -20,6 +20,10 @@ export async function POST(req: Request) {
       amount: amountMap[plan],
       currency: 'INR',
       receipt: `receipt_${Date.now()}`,
+      notes: {
+        userId,
+        plan,
+      },
     })
 
     return NextResponse.json(order)
