@@ -37,7 +37,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No email found" });
     }
 
-    await resend.emails.send({
+    const response = await resend.emails.send({
       from: "BandhanHub <onboarding@resend.dev>", //"BandhanHub <noreply@bandhanhub.com>" -- > change to this when have domain.
       to: email,
       subject: "New Inquiry Received 🎉",
@@ -96,6 +96,8 @@ export async function POST(req: Request) {
   </div>
       `,
     });
+
+    console.log("EMAIL RESPONSE:", response);
 
     return NextResponse.json({ success: true });
   } catch (err) {

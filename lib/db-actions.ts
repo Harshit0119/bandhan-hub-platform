@@ -12,12 +12,16 @@ export async function getVendorIdByUserId(userId: string) {
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (error || !data) {
+  if (error) {
     console.error("❌ Vendor fetch error:", error);
     return null;
   }
 
-  return data?.id || null;
+  if(!data){
+    return null
+  }
+
+  return data.id;
 }
 
 /**

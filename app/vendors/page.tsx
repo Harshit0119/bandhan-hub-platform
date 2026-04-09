@@ -1,4 +1,4 @@
-// /vendors/page.tsx
+//\app\vendors\page.tsx
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'

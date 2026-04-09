@@ -121,10 +121,7 @@ export default function DashboardLayout({
     )
   }
 
-  if (!user) {
-    router.push('/signup')
-    return
-  }
+  if (!user) return null
 
   return (
     <div>

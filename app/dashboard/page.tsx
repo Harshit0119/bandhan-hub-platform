@@ -108,7 +108,7 @@ export default function DashboardPage() {
               .order('created_at', { ascending: false })
               .limit(5)
 
-            if (!isMounted) {
+            if (isMounted) {
               setRecentVendors(data?.map(item => item.vendor).filter(Boolean) || [])
             }
           }, 0)

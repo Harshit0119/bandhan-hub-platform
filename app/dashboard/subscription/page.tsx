@@ -10,7 +10,7 @@ import { toast } from 'sonner'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
-import { useRouter } from 'next/router'
+import { useRouter } from 'next/navigation'
 
 /* ✅ Razorpay loader (FIX) */
 const loadRazorpay = () => {

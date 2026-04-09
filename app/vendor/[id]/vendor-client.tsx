@@ -1,99 +1,470 @@
-// app/vendor/[id]/page.tsx
+//\app\vendor\[id]\vendors-client.tsx
+'use client'
 
-import { notFound } from 'next/navigation'
+import { useEffect, useState, useMemo } from 'react'
+import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
-import { supabase } from '@/lib/supabase'
-import VendorClient from './vendor-client'
-import { FavoritesProvider  } from '@/lib/favorites-store'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { useFavorites } from '@/lib/favorites-store'
+import { useAuth } from '@/lib/auth-context'
+import {
+  insertProfileView,
+  insertContactClick,
+  insertInquiry,
+} from '@/lib/db-actions'
+import { Vendor } from '@/lib/types'
+import {
+  Heart,
+  MapPin,
+  Phone,
+  Instagram,
+  MessageCircle,
+  Star,
+  Eye,
+  ArrowLeft,
+  Clock,
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { motion } from 'framer-motion'
+import { toast } from 'sonner'
 
-interface PageProps {
-  params: Promise<{ id: string }>
+interface Props {
+  vendor: Vendor
 }
 
-export default async function VendorProfilePage({ params }: PageProps) {
-  // ✅ FIX: unwrap params
-  const { id } = await params
+export default function VendorClient({ vendor: initialVendor }: Props) {
+  const router = useRouter()
+  const { user } = useAuth()
+  const { isFavorite, addFavorite, removeFavorite, addRecentlyViewed } = useFavorites()
 
-  // ✅ GET VENDOR (slug first)
-  let { data } = await supabase
-    .from('vendors')
-    .select('*')
-    .eq('slug', id)
-    .maybeSingle()
+  const [vendor, setVendor] = useState<Vendor>(initialVendor)
+  const [showInquiry, setShowInquiry] = useState(false)
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
+  const [zoom, setZoom] = useState(1)
 
-  // ✅ fallback to ID
-  if (!data) {
-    const res = await supabase
-      .from('vendors')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle()
+  const [inquiryData, setInquiryData] = useState({
+    name: '',
+    phone: '',
+    event_date: '',
+    message: '',
+  })
 
-    data = res.data
+  const gallery = useMemo(() => vendor.gallery || [], [vendor.gallery])
+
+  // ✅ VIEW TRACK
+  useEffect(() => {
+    if (!vendor?.id) return
+    const key = `viewed_${vendor.id}`
+
+    if (!sessionStorage.getItem(key)) {
+      insertProfileView(vendor.id)
+      sessionStorage.setItem(key, 'true')
+      addRecentlyViewed(vendor.id)
+    }
+  }, [vendor?.id])
+
+  // ✅ FAVORITE
+  const handleFavoriteClick = () => {
+    if (!user) return router.push('/signup')
+
+    if (isFavorite(vendor.id)) {
+      removeFavorite(vendor.id)
+      setVendor((prev) => ({
+        ...prev,
+        favoritesCount: (prev.favoritesCount || 1) - 1,
+      }))
+    } else {
+      addFavorite(vendor.id)
+      setVendor((prev) => ({
+        ...prev,
+        favoritesCount: (prev.favoritesCount || 0) + 1,
+      }))
+    }
   }
 
-  if (!data) return notFound()
+  // ✅ CONTACT
+  const handleContactClick = (type: 'whatsapp' | 'instagram' | 'phone') => {
+    if (!user) return router.push('/signup')
 
-  const vendorId = data.id
+    insertContactClick(vendor.id)
 
-  // ✅ PARALLEL FETCH (FAST ⚡)
-  const [
-    { data: images },
-    { data: services },
-    { count: viewsCount },
-    { count: favCount },
-  ] = await Promise.all([
-    supabase
-      .from('vendor_images')
-      .select('image_url')
-      .eq('vendor_id', vendorId),
+    let url = ''
+    if (type === 'whatsapp') url = `https://wa.me/${vendor.whatsapp?.replace(/\D/g, '')}`
+    if (type === 'instagram') url = `https://instagram.com/${vendor.instagram}`
+    if (type === 'phone') url = `tel:${vendor.phone}`
 
-    supabase
-      .from('services')
-      .select('*')
-      .eq('vendor_id', vendorId),
+    window.open(url, '_blank')
+  }
 
-    supabase
-      .from('profile_views')
-      .select('*', { count: 'exact', head: true })
-      .eq('vendor_id', vendorId),
-
-    supabase
-      .from('favorites')
-      .select('*', { count: 'exact', head: true })
-      .eq('vendor_id', vendorId),
-  ])
-
-  const vendor = {
-    ...data,
-    coverImage: data.cover_image || '/placeholder.webp',
-    profileImage: data.profile_image || '/placeholder.webp',
-    gallery: images?.map((img) => img.image_url) || [],
-    services: services || [],
-    views: viewsCount || 0,
-    favoritesCount: favCount || 0,
-    minPrice: Number(data.min_price) || 0,
-    maxPrice: Number(data.max_price) || 0,
-    isPremium: data.is_premium,
+  const formatPrice = (price: number) => {
+    if (price >= 100000) return `₹${(price / 100000).toFixed(1)} Lakh`
+    return `₹${price.toLocaleString()}`
   }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
 
-      {/* ✅ CLIENT UI */}
-      <FavoritesProvider>
-      <VendorClient vendor={vendor} />
-      </FavoritesProvider>
+      {/* COVER */}
+      <div className="relative h-64 sm:h-80 md:h-80">
+        <Image
+          src={vendor.coverImage || '/placeholder.webp'}
+          alt={vendor.name}
+          fill
+          priority
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-black/50" />
 
-      <Footer />
-    </div>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="absolute top-4 left-4 text-white bg-white/20 hover:bg-white/30"
+          onClick={() => router.back()}
+        >
+          <ArrowLeft />
+        </Button>
+      </div>
+
+      {/* MAIN */}
+      <main className="flex-1 container mx-auto px-4 -mt-20 relative z-10">
+
+        {/* PROFILE CARD */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-card rounded-2xl shadow-xl border p-5 md:p-8"
+        >
+          <div className="flex flex-col md:flex-row gap-6">
+
+            {/* IMAGE */}
+            <div className="-mt-16 md:mt-0">
+              <div className="relative w-28 h-28 md:w-36 md:h-36 rounded-xl overflow-hidden border-4 border-white shadow-lg">
+                <Image
+                  src={vendor.profileImage || '/placeholder.jpg'}
+                  alt={vendor.name}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            </div>
+
+            {/* INFO */}
+            <div className="flex-1">
+              <div className="flex justify-between flex-wrap gap-4">
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold">
+                    {vendor.name}
+                  </h1>
+
+                  <p className="text-muted-foreground">{vendor.category}</p>
+
+                  <div className="flex items-center gap-1 text-sm mt-1">
+                    <MapPin className="h-4 w-4" />
+                    {vendor.city}
+                  </div>
+
+                  {vendor.isPremium && (
+                    <Badge className="mt-2">
+                      <Star className="h-3 w-3 mr-1" />
+                      Featured
+                    </Badge>
+                  )}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleFavoriteClick}
+                  className={cn(isFavorite(vendor.id) && "text-primary")}
+                >
+                  <Heart className={cn(isFavorite(vendor.id) && "fill-current")} />
+                </Button>
+              </div>
+
+              {/* STATS */}
+              <div className="flex gap-6 mt-4 text-sm text-muted-foreground flex-wrap">
+                <span className="flex items-center gap-1">
+                  <Clock className="h-4 w-4" /> {vendor.experience} experience
+                </span>
+                <span className="flex items-center gap-1">
+                  <Eye className="h-4 w-4" /> {vendor.views || 0}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Heart className="h-4 w-4" /> {vendor.favoritesCount || 0}
+                </span>
+              </div>
+
+              {/* PRICE */}
+              <div className="mt-4 p-4 bg-secondary/50 rounded-lg inline-block">
+                <span className="text-sm text-muted-foreground">Starting from</span><div className="text-xl font-bold text-primary">
+                  {formatPrice(vendor.minPrice || 0)} - {formatPrice(vendor.maxPrice || 0)}
+                </div>
+              </div>
+
+              {/* CONTACT */}
+              <div className="flex flex-wrap gap-3 mt-5">
+                {vendor.whatsapp && (
+                  <Button onClick={() => handleContactClick('whatsapp')}>
+                    WhatsApp
+                  </Button>
+                )}
+                {vendor.instagram && (
+                  <Button
+                    variant="outline"
+                    onClick={() => handleContactClick('instagram')}>
+                    <Instagram className="h-4 w-4 mr-2" />
+                    Instagram
+                  </Button>
+                )}
+                {vendor.phone && (
+                  <Button variant="outline" onClick={() => handleContactClick('phone')}>
+                    Call
+                  </Button>
+                )}
+                <Button onClick={() => {
+                  if (!user) {
+                    router.push('/signup')
+                    return
+                  }
+                  setShowInquiry(true)
+                }}>
+                  Send Inquiry
+                </Button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* GRID */}
+        <div className="grid lg:grid-cols-3 gap-6 mt-6 pb-12">
+
+          {/* LEFT */}
+          <div className="lg:col-span-2 space-y-6">
+
+            <Card>
+              <CardHeader><CardTitle>About</CardTitle></CardHeader>
+              <CardContent>{vendor.about}</CardContent>
+            </Card>
+
+            {/* GALLERY */}
+            <Card>
+              <CardHeader><CardTitle>Gallery</CardTitle></CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {gallery.map((img, i) => (
+                    <div
+                      key={i}
+                      className="relative aspect-square rounded-lg overflow-hidden cursor-pointer"
+                      onClick={() => {
+                        setSelectedIndex(i)
+                        setZoom(1)
+                      }}
+                    >
+                      <Image
+                        src={img}
+                        alt=""
+                        fill
+                        sizes="(max-width:768px) 50vw, 25vw"
+                        className="object-cover hover:scale-105 transition"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* RIGHT */}
+          <div className="space-y-6">
+
+            <Card>
+              <CardHeader><CardTitle>Services & Pricing</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {vendor.services?.map((s) => (
+                  <div key={s.id} className="border p-3 rounded-lg">
+                    <div className="flex justify-between">
+                      <span>{s.name}</span>
+                      <span className="font-semibold">{formatPrice(s.price || 0)}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{s.description}</p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* INQUIRY MODAL */}
+            {showInquiry && (
+              <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+                <div className="bg-white p-6 rounded-xl w-full max-w-md">
+                  <h2 className="font-bold text-lg mb-4">Send Inquiry</h2>
+
+                  <input
+                    placeholder="Your Name"
+                    className="w-full border p-2 mb-2"
+                    value={inquiryData.name}
+                    onChange={(e) => setInquiryData({ ...inquiryData, name: e.target.value })}
+                  />
+
+                  <input
+                    placeholder="Phone"
+                    className="w-full border p-2 mb-2"
+                    value={inquiryData.phone}
+                    onChange={(e) => setInquiryData({ ...inquiryData, phone: e.target.value })}
+                  />
+
+                  <p className="text-sm text-muted-foreground mb-1"><b>Event Date</b></p>
+                  <input
+                    type="month"
+                    className="w-full border p-2 mb-3"
+                    value={inquiryData.event_date}
+                    onChange={(e) =>
+                      setInquiryData({ ...inquiryData, event_date: e.target.value })
+                    }
+                  />
+
+                  <textarea
+                    placeholder="Message"
+                    className="w-full border p-2 mb-3"
+                    value={inquiryData.message}
+                    onChange={(e) =>
+                      setInquiryData({ ...inquiryData, message: e.target.value })
+                    }
+                  />
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={async () => {
+                        if (!inquiryData.name || !inquiryData.phone) {
+                          toast.error("Name & Phone are required")
+                          return
+                        }
+                        await insertInquiry({
+                          vendorId: vendor.id,
+                          userId: user?.id || null,
+                          name: inquiryData.name,
+                          phone: inquiryData.phone,
+                          event_date: inquiryData.event_date || null,
+                          message: inquiryData.message,
+                        })
+                        await fetch("/api/send-inquiry-email", {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({
+                            vendorId: vendor.id,
+                            name: inquiryData.name,
+                            phone: inquiryData.phone,
+                            message: inquiryData.message,
+                          }),
+                        })
+                        toast.success("Sent!")
+                        setShowInquiry(false)
+                      }}
+                    >
+                      Submit
+                    </Button>
+                    <Button variant="outline" onClick={() => setShowInquiry(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </main >
+
+      {/* ✅ FULLSCREEN VIEWER */}
+      {
+        selectedIndex !== null && (
+          <div
+            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center"
+            onClick={() => setSelectedIndex(null)}
+          >
+            {/* CLOSE */}
+            <button aria-label="Open menu"
+              className="absolute top-4 right-4 text-white text-3xl"
+              onClick={() => setSelectedIndex(null)}
+            >
+              ✕
+            </button>
+
+
+            {/* IMAGE */}
+            <div
+              className="flex items-center justify-center w-full h-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={vendor.gallery?.[selectedIndex]}
+                className="max-h-[90%] max-w-[90%]"
+                style={{ transform: `scale(${zoom})` }}
+              />
+            </div>
+
+            {/* PREV */}
+            <button aria-label="Open menu"
+              className="absolute left-4 text-white text-4xl"
+              onClick={(e) => {
+                e.stopPropagation()
+                setSelectedIndex((prev) =>
+                  prev === 0 ? gallery.length - 1 : (prev as number) - 1
+                )
+              }}
+            >
+              ‹
+            </button>
+
+            {/* NEXT */}
+            <button aria-label="Open menu"
+              className="absolute right-4 text-white text-4xl"
+              onClick={(e) => {
+                e.stopPropagation()
+                setSelectedIndex((prev) =>
+                  prev === gallery.length - 1 ? 0 : (prev as number) + 1
+                )
+              }}
+            >
+              ›
+            </button>
+
+            {/* ZOOM */}
+            <div className="absolute bottom-6 flex gap-4">
+              <button aria-label="Open menu"
+                className="bg-white px-3 py-1 rounded"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setZoom((z) => Math.max(1, z - 0.5))
+                }}
+              >
+                -
+              </button>
+              <button aria-label="Open menu"
+                className="bg-white px-3 py-1 rounded"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setZoom((z) => z + 0.5)
+                }}
+              >
+                +
+              </button>
+            </div>
+          </div>
+        )
+      }
+    </div >
   )
 }
 
 
-// 'use Client'
+
+//  'use client'
 
 // import { useEffect, useState, use, useMemo } from 'react'
 // import Image from 'next/image'
@@ -507,14 +878,14 @@ export default async function VendorProfilePage({ params }: PageProps) {
 //                       }
 //                     />
 
-//                     <textarea
-//                       placeholder="Message"
-//                       className="w-full border p-2 mb-3"
-//                       value={inquiryData.message}
-//                       onChange={(e) =>
-//                         setInquiryData({ ...inquiryData, message: e.target.value })
-//                       }
-//                     />
+// <textarea
+//   placeholder="Message"
+//   className="w-full border p-2 mb-3"
+//   value={inquiryData.message}
+//   onChange={(e) =>
+//     setInquiryData({ ...inquiryData, message: e.target.value })
+//   }
+// />
 
 //                     <div className="flex gap-3">
 //                       <Button
@@ -666,7 +1037,6 @@ export default async function VendorProfilePage({ params }: PageProps) {
 // }
 
 // export default function VendorProfilePage({ params }: { params: Promise<{ id: string }> }) {
-//   const resolvedParams = use(params)
 //   const router = useRouter()
 //   const { user, isLoading: authLoading } = useAuth()
 //   const [vendor, setVendor] = useState<Vendor | null>(null)
