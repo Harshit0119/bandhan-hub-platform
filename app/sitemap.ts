@@ -1,32 +1,30 @@
 //\app\sitemap.ts
-import { getAllVendors } from '@/lib/db-actions'
-import { CATEGORY_SLUG_MAP } from '@/lib/types'
+// app/sitemap.ts
 
-export default async function sitemap() {
-  const BASE_URL = 'https://bandhan-hub.vercel.app'
+import { MetadataRoute } from "next";
+import { getAllVendors } from "@/lib/db-actions";
+import { CATEGORY_SLUG_MAP } from "@/lib/types";
 
-  const vendors = await getAllVendors()
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const BASE_URL = "https://bandhan-hub.vercel.app";
+
+  const vendors = await getAllVendors();
 
   const vendorUrls = vendors.map((vendor) => ({
     url: `${BASE_URL}/vendor/${vendor.id}`,
     lastModified: new Date(),
-  }))
+  }));
 
-  const cities = [
-    'bhopal',
-    'indore',
-    'delhi',
-    'mumbai',
-  ]
+  const cities = ["bhopal", "indore", "delhi", "mumbai"];
 
-  const categorySlugs = Object.values(CATEGORY_SLUG_MAP)
+  const categorySlugs = Object.values(CATEGORY_SLUG_MAP);
 
   const listingUrls = cities.flatMap((city) =>
     categorySlugs.map((slug) => ({
       url: `${BASE_URL}/${city}/${slug}`,
       lastModified: new Date(),
-    }))
-  )
+    })),
+  );
 
   return [
     {
@@ -35,5 +33,5 @@ export default async function sitemap() {
     },
     ...vendorUrls,
     ...listingUrls,
-  ]
+  ];
 }
