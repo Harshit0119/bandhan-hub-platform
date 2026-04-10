@@ -14,7 +14,7 @@ type Props = {
     category: string
   }
 }
-
+export const revalidate = 60
 export async function generateMetadata({
   params,
 }: {

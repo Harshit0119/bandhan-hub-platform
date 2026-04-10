@@ -2,7 +2,7 @@
 
 import { supabase } from "@/lib/supabase";
 import { Vendor, VendorCategory } from "@/lib/types";
-
+import { cache } from 'react'
 /**
  * ✅ Get vendors by city + category (SEO pages)
  */
@@ -51,18 +51,18 @@ export async function getVendors({
   }));
 }
 
-export async function getAllVendors(): Promise<Vendor[]> {
+export const getAllVendors = cache(async (): Promise<Vendor[]> {
   const { data, error } = await supabase
     .from("vendors")
-    .select("id, slug, category, city, created_at");
+    .select("id, slug, category, city, created_at")
 
   if (error) {
-    console.error("❌ getAllVendors error:", error);
-    return [];
+    console.error("❌ getAllVendors error:", error)
+    return []
   }
 
-  return data || [];
-}
+  return data || []
+})
 
 /**
  * ✅ Get vendorId from logged-in user
