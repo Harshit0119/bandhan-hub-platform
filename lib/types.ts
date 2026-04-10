@@ -110,6 +110,14 @@ export const SLUG_TO_CATEGORY: Record<string, VendorCategory> = {
   "wedding-venues": "Gardens/Hotels",
 }
 
+export type VendorBasic = {
+  id: string
+  slug: string
+  category: string
+  city: string
+  created_at: string
+}
+
 export interface Testimonial {
   id: string;
   name: string;

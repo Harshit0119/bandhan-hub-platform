@@ -1,7 +1,7 @@
 // lib/db-actions.ts
 
 import { supabase } from "@/lib/supabase";
-import { Vendor, VendorCategory } from "@/lib/types";
+import { VendorBasic, VendorCategory,Vendor } from "@/lib/types";
 import { cache } from 'react'
 /**
  * ✅ Get vendors by city + category (SEO pages)
@@ -51,7 +51,7 @@ export async function getVendors({
   }));
 }
 
-export const getAllVendors = cache(async (): Promise<Vendor[]> {
+export const getAllVendors = cache(async (): Promise<VendorBasic[]> =>   {
   const { data, error } = await supabase
     .from("vendors")
     .select("id, slug, category, city, created_at")
