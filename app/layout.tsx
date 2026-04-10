@@ -56,6 +56,8 @@ export default function RootLayout({
           rel="dns-prefetch"
           href="https://ujspkyagiyezehdlxdsw.supabase.co"
         />
+        {/* Google Search Console Verification */}
+       <meta name="google-site-verification" content="7wYq9gRJq3xBgIblcag24FNhuqewAQGEkm9cSeTv3Ow" />
       </head>
 
       <body
