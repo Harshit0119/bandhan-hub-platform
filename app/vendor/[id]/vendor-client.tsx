@@ -189,7 +189,7 @@ export default function VendorClient({ vendor: initialVendor }: Props) {
               {/* STATS */}
               <div className="flex gap-6 mt-4 text-sm text-muted-foreground flex-wrap">
                 <span className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" /> {vendor.experience}+ years experience
+                  <Clock className="h-4 w-4" /> {vendor.experience}+ Years experience
                 </span>
                 <span className="flex items-center gap-1">
                   <Eye className="h-4 w-4" /> {vendor.views || 0}
