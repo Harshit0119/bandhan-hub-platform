@@ -72,6 +72,7 @@ export function HeroSection() {
             className="bg-black/50 border border-white text-white px-8 py-6 text-lg hover:bg-black/70"
           >
             Watch Demo
+            <p>get more leads</p>
           </Button>
         </div>
 
