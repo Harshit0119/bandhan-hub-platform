@@ -1,10 +1,12 @@
 'use client'
-
+import { useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 
 export function HeroSection() {
+  const [showVideo, setShowVideo] = useState(false)
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
 
@@ -62,6 +64,15 @@ export function HeroSection() {
               Join as Vendor
             </Button>
           </Link>
+
+          {/* 🎥 DEMO BUTTON */}
+          <Button
+            size="lg"
+            onClick={() => setShowVideo(true)}
+            className="bg-black/50 border border-white text-white px-8 py-6 text-lg hover:bg-black/70"
+          >
+            Watch Demo
+          </Button>
         </div>
 
         {/* 📊 STATS */}
@@ -77,8 +88,34 @@ export function HeroSection() {
             </div>
           ))}
         </div>
-
       </div>
+      {/* 🎬 VIDEO MODAL */}
+      {showVideo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4">
+          <div className="relative w-full max-w-3xl">
+
+            {/* ❌ CLOSE BUTTON */}
+            <button
+              onClick={() => setShowVideo(false)}
+              className="absolute -top-10 right-0 text-white text-2xl"
+            >
+              ✕
+            </button>
+
+            {/* ▶️ YOUTUBE EMBED */}
+            <div className="aspect-video w-full">
+              <iframe
+                className="w-full h-full rounded-lg"
+                src="https://www.youtube.com/embed/YOUR_VIDEO_ID"
+                title="Vendor Demo"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+
+          </div>
+        </div>
+      )}
     </section>
   )
 }
