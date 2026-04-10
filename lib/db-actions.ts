@@ -1,6 +1,68 @@
 // lib/db-actions.ts
 
 import { supabase } from "@/lib/supabase";
+import { Vendor, VendorCategory } from "@/lib/types";
+
+/**
+ * ✅ Get vendors by city + category (SEO pages)
+ */
+export async function getVendors({
+  city,
+  category,
+}: {
+  city: string;
+  category: VendorCategory;
+}): Promise<Vendor[]> {
+  const { data, error } = await supabase
+    .from("vendors")
+    .select("*")
+    .ilike("city", city)
+    .eq("category", category)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("❌ getVendors error:", error);
+    return [];
+  }
+
+  return (data || []).map((v) => ({
+    id: v.id,
+    name: v.name,
+    slug: v.slug,
+
+    category: v.category,
+    city: v.city,
+
+    profileImage: v.profile_image,
+    coverImage: v.cover_image,
+
+    about: v.about,
+    experience: v.experience,
+
+    minPrice: v.min_price,
+    maxPrice: v.max_price,
+
+    whatsapp: v.whatsapp,
+    instagram: v.instagram,
+    phone: v.phone,
+
+    isPremium: v.is_premium,
+    createdAt: v.created_at,
+  }));
+}
+
+export async function getAllVendors(): Promise<Vendor[]> {
+  const { data, error } = await supabase
+    .from("vendors")
+    .select("id, slug, category, city, created_at");
+
+  if (error) {
+    console.error("❌ getAllVendors error:", error);
+    return [];
+  }
+
+  return data || [];
+}
 
 /**
  * ✅ Get vendorId from logged-in user
@@ -17,8 +79,8 @@ export async function getVendorIdByUserId(userId: string) {
     return null;
   }
 
-  if(!data){
-    return null
+  if (!data) {
+    return null;
   }
 
   return data.id;
@@ -34,7 +96,7 @@ export async function insertProfileView(vendorId: string) {
 
   if (error) {
     console.error("❌ Profile view insert error:", error);
-    throw error
+    throw error;
   }
 }
 
@@ -48,7 +110,7 @@ export async function insertContactClick(vendorId: string) {
 
   if (error) {
     console.error("❌ Contact click error:", error);
-    throw error
+    throw error;
   }
 }
 

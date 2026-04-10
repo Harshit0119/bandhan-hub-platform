@@ -50,12 +50,14 @@ export type VendorCategory =
   | "Makeup Artist"
   | "Mehendi Artist"
   | "DJ"
+  | "Hindu Priest"
   | "Caterer"
   | "Anchor"
   | "Decorator"
   | "Beauty Parlour"
   | "Clothing"
-  | "Card Printing";
+  | "Card Printing"
+  | "Gardens/Hotels";
 
 export const VENDOR_CATEGORIES: VendorCategory[] = [
   "Photographer",
@@ -64,13 +66,49 @@ export const VENDOR_CATEGORIES: VendorCategory[] = [
   "Makeup Artist",
   "Mehendi Artist",
   "DJ",
+  "Hindu Priest",
   "Caterer",
   "Anchor",
   "Decorator",
   "Beauty Parlour",
   "Clothing",
-  "Card Printing"
+  "Card Printing",
+  "Gardens/Hotels"
 ];
+
+export const CATEGORY_SLUG_MAP: Record<string, string> = {
+  "Photographer": "photographers",
+  "Pre-wedding Shoot": "pre-wedding-shoots",
+  "Wedding Planner": "wedding-planners",
+  "Makeup Artist": "makeup-artists",
+  "Mehendi Artist": "mehendi-artists",
+  "DJ": "djs",
+  "Hindu Priest": "pandits",
+  "Caterer": "caterers",
+  "Anchor": "anchors",
+  "Decorator": "decorators",
+  "Beauty Parlour": "beauty-parlours",
+  "Clothing": "wedding-clothing",
+  "Card Printing": "wedding-card-printing",
+  "Gardens/Hotels": "wedding-venues",
+}
+
+export const SLUG_TO_CATEGORY: Record<string, VendorCategory> = {
+  "photographers": "Photographer",
+  "pre-wedding-shoots": "Pre-wedding Shoot",
+  "wedding-planners": "Wedding Planner",
+  "makeup-artists": "Makeup Artist",
+  "mehendi-artists": "Mehendi Artist",
+  "djs": "DJ",
+  "pandits": "Hindu Priest",
+  "caterers": "Caterer",
+  "anchors": "Anchor",
+  "decorators": "Decorator",
+  "beauty-parlours": "Beauty Parlour",
+  "wedding-clothing": "Clothing",
+  "wedding-card-printing": "Card Printing",
+  "wedding-venues": "Gardens/Hotels",
+}
 
 export interface Testimonial {
   id: string;

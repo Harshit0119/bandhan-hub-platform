@@ -1,37 +1,39 @@
-import { MetadataRoute } from 'next'
+//\app\sitemap.ts
+import { getAllVendors } from '@/lib/db-actions'
+import { CATEGORY_SLUG_MAP } from '@/lib/types'
 
-// Replace with your actual domain
-const BASE_URL = 'https://bandhan-hub.vercel.app'
+export default async function sitemap() {
+  const BASE_URL = 'https://bandhan-hub.vercel.app'
 
-// 👉 If you have DB, fetch vendors here
-async function getVendors() {
-  return [
-    { slug: 'photgallery' },
-    // later fetch from Supabase
-  ]
-}
+  const vendors = await getAllVendors()
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const vendors = await getVendors()
-
-  const vendorUrls = vendors.map((v) => ({
-    url: `${BASE_URL}/vendor/${v.slug}`,
+  const vendorUrls = vendors.map((vendor) => ({
+    url: `${BASE_URL}/vendor/${vendor.id}`,
     lastModified: new Date(),
   }))
+
+  const cities = [
+    'bhopal',
+    'indore',
+    'delhi',
+    'mumbai',
+  ]
+
+  const categorySlugs = Object.values(CATEGORY_SLUG_MAP)
+
+  const listingUrls = cities.flatMap((city) =>
+    categorySlugs.map((slug) => ({
+      url: `${BASE_URL}/${city}/${slug}`,
+      lastModified: new Date(),
+    }))
+  )
 
   return [
     {
       url: BASE_URL,
       lastModified: new Date(),
     },
-    {
-      url: `${BASE_URL}/vendors`,
-      lastModified: new Date(),
-    },
-    {
-      url: `${BASE_URL}/dashboard`,
-      lastModified: new Date(),
-    },
     ...vendorUrls,
+    ...listingUrls,
   ]
 }
