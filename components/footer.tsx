@@ -41,7 +41,7 @@ export function Footer() {
               Bringing your wedding team together. Connect with the best wedding vendors across India.
             </p>
             <div className="flex gap-4">
-              <a href="#" className="text-background/70 hover:text-accent transition-colors">
+              <a href="https://instagram.com/bandhan_hub" className="text-background/70 hover:text-accent transition-colors">
                 <Instagram className="h-5 w-5" />
               </a>
               <a href="#" className="text-background/70 hover:text-accent transition-colors">

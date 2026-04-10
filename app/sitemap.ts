@@ -29,7 +29,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
     },
     {
-      url: `${BASE_URL}/about`,
+      url: `${BASE_URL}/dashboard`,
       lastModified: new Date(),
     },
     ...vendorUrls,
