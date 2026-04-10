@@ -69,10 +69,10 @@ export function HeroSection() {
           <Button
             size="lg"
             onClick={() => setShowVideo(true)}
-            className="bg-black/50 border border-white text-white px-8 py-6 text-lg hover:bg-black/70"
+            className="bg-black/50 border border-white text-white px-8 py-6 text-lg hover:bg-black/70 text-center"
           >
-            Watch Demo
-            <p>get more leads</p>
+            <span>Watch Demo</span><br />
+            <span className="text-sm opacity-80">get more leads</span>
           </Button>
         </div>
 
