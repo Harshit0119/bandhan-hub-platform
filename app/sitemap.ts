@@ -4,7 +4,7 @@
 import { MetadataRoute } from "next";
 import { getAllVendors } from "@/lib/db-actions";
 import { CATEGORY_SLUG_MAP } from "@/lib/types";
-
+export const dynamic = 'force-dynamic'
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const BASE_URL = "https://bandhan-hub.vercel.app";
 
