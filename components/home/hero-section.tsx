@@ -67,9 +67,9 @@ export function HeroSection() {
         {/* 📊 STATS */}
         <div className="mt-12 flex justify-center gap-8 text-center">
           {[
-            { value: "500+", label: "Vendors" },
-            { value: "50+", label: "Cities" },
-            { value: "10K+", label: "Couples" },
+            { value: "Growing", label: "Vendor Network" },
+            { value: "Expanding", label: "Across India" },
+            { value: "Connecting", label: "Couples & Services" },
           ].map((item) => (
             <div key={item.label}>
               <div className="text-2xl font-bold text-accent">{item.value}</div>
