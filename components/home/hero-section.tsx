@@ -74,6 +74,7 @@ export function HeroSection() {
             Watch Demo
           </Button>
         </div>
+        
         {/* 📊 STATS */}
         <div className="mt-12 flex justify-center gap-8 text-center">
           {[
