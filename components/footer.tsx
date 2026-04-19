@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Instagram, Twitter, Facebook, Mail, Phone } from 'lucide-react'
 
+
 const footerLinks = {
   vendors: [
     { name: 'All Vendors', href: '/vendors' },
