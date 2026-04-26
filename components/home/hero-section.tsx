@@ -18,7 +18,7 @@ export function HeroSection() {
           fill
           priority
           sizes="100vw"
-          quality={60}
+          quality={75}
           className="object-cover brightness-110 will-change-transform"
           placeholder="blur"
           blurDataURL="/blur.png"
@@ -74,7 +74,7 @@ export function HeroSection() {
             Watch Demo
           </Button>
         </div>
-        
+
         {/* 📊 STATS */}
         <div className="mt-12 flex justify-center gap-8 text-center">
           {[
@@ -101,13 +101,20 @@ export function HeroSection() {
             >
               ✕
             </button>
-            
+
 
             {/* ▶️ YOUTUBE EMBED */}
-            <div className="aspect-video w-full">
-              <iframe width="1071" height="631" src="https://www.youtube.com/embed/qYASE9G12bg" title="BandhanHub Tutorial | Seamless Wedding Vendor Onboarding &amp; Payments" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen></iframe>
+            <div className="w-full max-w-md mx-auto">
+              <div className="aspect-video">
+                <iframe
+                  className="w-full h-full rounded-lg"
+                  src="https://www.youtube.com/embed/qYASE9G12bg"
+                  title="BandhanHub Tutorial | Seamless Wedding Vendor Onboarding & Payments"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
             </div>
-
           </div>
         </div>
       )}
