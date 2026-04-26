@@ -106,7 +106,7 @@ export function HeroSection() {
             <div className="aspect-video w-full">
               <iframe
                 className="w-full h-full rounded-lg"
-                src="https://www.youtube.com/embed/YOUR_VIDEO_ID"
+                src="https://youtu.be/qYASE9G12bg"
                 title="Vendor Demo"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
