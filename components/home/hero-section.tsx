@@ -105,13 +105,7 @@ export function HeroSection() {
 
             {/* ▶️ YOUTUBE EMBED */}
             <div className="aspect-video w-full">
-              <iframe
-                className="w-full h-full rounded-lg"
-                src="https://www.youtube.com/watch?v=qYASE9G12bg"
-                title="Vendor Demo"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
+              <iframe width="1071" height="631" src="https://www.youtube.com/embed/qYASE9G12bg" title="BandhanHub Tutorial | Seamless Wedding Vendor Onboarding &amp; Payments" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen></iframe>
             </div>
 
           </div>
