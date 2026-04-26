@@ -101,6 +101,7 @@ export function HeroSection() {
             >
               ✕
             </button>
+            
 
             {/* ▶️ YOUTUBE EMBED */}
             <div className="aspect-video w-full">
