@@ -66,13 +66,17 @@ export function HeroSection() {
           </Link>
 
           {/* 🎥 DEMO BUTTON */}
-          <Button
-            size="lg"
-            onClick={() => setShowVideo(true)}
-            className="bg-black/50 border border-white text-white px-8 py-6 text-lg hover:bg-black/70 text-center"
-          >
-            Watch Demo
-          </Button>
+          <Link href="#" onClick={(e) => {
+            e.preventDefault();
+            setShowVideo(true);
+          }}>
+            <Button
+              size="lg"
+              className="border border-white text-white bg-black hover:bg-black/20 px-8 py-6 text-lg"
+            >
+              Watch Demo
+            </Button>
+          </Link>
         </div>
 
         {/* 📊 STATS */}
